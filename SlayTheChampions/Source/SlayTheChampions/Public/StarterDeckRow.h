@@ -7,16 +7,16 @@
 /**
  * FStarterDeckRow
  *
- * Á÷¾÷º° ½ÃÀÛ µ¦ ±¸¼º DataTable Row Struct.
- * DT_StarterDeck_Warrior, DT_StarterDeck_Mage µî¿¡¼­ »ç¿ë.
- * CardID ´Â DT_Cards ÀÇ RowName °ú ÀÏÄ¡ÇØ¾ß ÇÑ´Ù.
+ * ìºë¦­í„°ë³„ ì‹œì‘ ë± DataTable Row Struct.
+ * DT_StarterDeck_Warrior, DT_StarterDeck_Mage ë“±ì—ì„œ ì‚¬ìš©.
+ * CardID ëŠ” DT_Cards ì˜ _CardID ì™€ ì¼ì¹˜í•´ì•¼ í•œë‹¤.
  */
 USTRUCT(BlueprintType)
 struct FStarterDeckRow : public FTableRowBase
 {
     GENERATED_BODY()
 
-    // DT_Cards ÀÇ RowName (Warrior_Attack, Warrior_Defend µî)
+    // DT_Cards ì˜ _CardID (101, 201 ë“±)
     UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Deck")
-    FName CardID;
+    int32 CardID = 0;
 };

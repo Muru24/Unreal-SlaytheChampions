@@ -8,8 +8,8 @@
 /**
  * FPlayerDeckSaveData
  *
- * ÆÄÆ¼¿ø 1¸íÀÇ µ¦ µ¥ÀÌÅÍ¸¦ ÀúÀåÇÏ´Â ±¸Á¶Ã¼.
- * UCardSaveGame ¾È¿¡ ÆÄÆ¼¿ø ¼ö¸¸Å­ ¹è¿­·Î º¸°üµÈ´Ù.
+ * íŒŒí‹°ì› 1ëª…ì˜ ë± ë°ì´í„°ë¥¼ ì €ì¥í•˜ëŠ” êµ¬ì¡°ì²´.
+ * UCardSaveGame ì•ˆì— íŒŒí‹°ì› ìˆ˜ë§Œí¼ ë°°ì—´ë¡œ ì €ì¥ëœë‹¤.
  * Index 0 = Pawn1, Index 1 = Pawn2
  */
 USTRUCT(BlueprintType)
@@ -17,37 +17,37 @@ struct FPlayerDeckSaveData
 {
     GENERATED_BODY()
 
-    // ÀÌ µ¦ÀÇ ¼ÒÀ¯ Á÷¾÷ (Warrior, Mage, Healer µî)
+    // ë± ì†Œìœ  ì§ì—… ë¶„ë¥˜ (Warrior, Mage, Healer ë“±)
     UPROPERTY(BlueprintReadWrite)
     EJobClass JobClass = EJobClass::Warrior;
 
     /**
-     * Ä«µå ID ¹è¿­.
-     * DT_Cards ÀÇ RowName ±âÁØ (¿¹: Warrior_Attack, Warrior_Defend)
-     * ÀüÅõ Á¾·á ½Ã DrawPile + Hand + DiscardPile À» ÇÕÃÄ¼­ ÀúÀå.
-     * ÀüÅõ ½ÃÀÛ ½Ã ÀÌ ¹è¿­À» ¼ÅÇÃÇØ¼­ DrawPile ·Î »ç¿ë.
+     * ì¹´ë“œ ID ë°°ì—´.
+     * DT_Cards ì˜ _CardID ê°’ (ì˜ˆ: 101, 201)
+     * ì „íˆ¬ ì¢…ë£Œ ì‹œ DrawPile + Hand + DiscardPile ì„ í•©ì³ì„œ ì €ì¥.
+     * ì „íˆ¬ ì‹œì‘ ì‹œ ì´ ë°°ì—´ì„ êº¼ë‚´ì„œ DrawPile ì— ì ì¬.
      */
     UPROPERTY(BlueprintReadWrite)
-    TArray<FName> DeckCards;
+    TArray<int32> DeckCards;
 };
 
 /**
  * UCardSaveGame
  *
- * ÆÄÆ¼¿øº° µ¦ µ¥ÀÌÅÍ¸¦ ÆÄÀÏ·Î ÀúÀå/ºÒ·¯¿À±â ´ã´ç.
+ * íŒŒí‹°ì›ì˜ ë± ë°ì´í„°ë¥¼ íŒŒì¼ë¡œ ì €ì¥/ë¶ˆëŸ¬ì˜¤ê¸° ìœ„í•œ í´ë˜ìŠ¤.
  *
- * [»ç¿ë Èå¸§]
- * 1. °ÔÀÓ ½ÃÀÛ ½Ã LoadOrCreate() È£Ãâ
- *    -> SaveGame ÆÄÀÏ ÀÖÀ¸¸é ºÒ·¯¿È
- *    -> ¾øÀ¸¸é DT_StarterDeck ¿¡¼­ ÀĞ¾î¼­ ÃÖÃÊ SaveGame »ı¼º
+ * [ì‚¬ìš© íë¦„]
+ * 1. ê²Œì„ ì‹œì‘ ì‹œ LoadOrCreate() í˜¸ì¶œ
+ *    -> SaveGame íŒŒì¼ì´ ìˆìœ¼ë©´ ë¶ˆëŸ¬ì˜´
+ *    -> ì—†ìœ¼ë©´ DT_StarterDeck ì—ì„œ ì½ì–´ ì´ˆê¸° SaveGame ìƒì„±
  *
- * 2. ÀüÅõ Á¾·á ½Ã SaveDeckAfterBattle() È£Ãâ
- *    -> DrawPile + Hand + DiscardPile ÇÕÃÄ¼­ ÀúÀå (A¹æ½Ä)
+ * 2. ì „íˆ¬ ì¢…ë£Œ ì‹œ SaveDeckAfterBattle() í˜¸ì¶œ
+ *    -> DrawPile + Hand + DiscardPile í•©ì³ì„œ ì €ì¥ (Aë°©ì‹)
  *
- * 3. Ä«µå º¸»ó ½Ã AddCard() È£Ãâ
- *    -> Ä«µå Ãß°¡ ÈÄ Áï½Ã ÀúÀå
+ * 3. ì¹´ë“œ íšë“ ì‹œ AddCard() í˜¸ì¶œ
+ *    -> ì¹´ë“œ ì¶”ê°€ í›„ ì¦‰ì‹œ ì €ì¥
  *
- * [ÀúÀå ½½·Ô]
+ * [ìŠ¬ë¡¯ ì •ë³´]
  * SlotName : "PlayerDeckSave"
  * UserIndex : 0
  */
@@ -57,86 +57,86 @@ class SLAYTHECHAMPIONS_API UCardSaveGame : public USaveGame
     GENERATED_BODY()
 
 public:
-    // ÆÄÆ¼¿øº° µ¦ µ¥ÀÌÅÍ ¹è¿­ (Index 0 = Pawn1, Index 1 = Pawn2)
+    // íŒŒí‹°ì›ë³„ ë± ë°ì´í„° ë°°ì—´ (Index 0 = Pawn1, Index 1 = Pawn2)
     UPROPERTY(BlueprintReadWrite, Category = "Save")
     TArray<FPlayerDeckSaveData> PartyDecks;
 
-    // ÀúÀå ½½·Ô ÀÌ¸§ (°íÁ¤°ª)
+    // ì €ì¥ ìŠ¬ë¡¯ ì´ë¦„ (ê³ ì •ê°’)
     static const FString SlotName;
 
-    // ÀúÀå ½½·Ô À¯Àú ÀÎµ¦½º (½Ì±ÛÇÃ·¹ÀÌ ±âÁØ 0 °íÁ¤)
+    // ì €ì¥ ìŠ¬ë¡¯ ìœ ì € ì¸ë±ìŠ¤ (ì‹±ê¸€í”Œë ˆì´ì–´ ê¸°ì¤€ 0 ê³ ì •)
     static const int32 UserIndex;
 
-    // ¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡
-    // Á¤Àû ÇïÆÛ ÇÔ¼ö
-    // ¾îµğ¼­µç UCardSaveGame:: À¸·Î ¹Ù·Î È£Ãâ °¡´É
-    // ¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡
+    // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // ì •ì  ìœ í‹¸ í•¨ìˆ˜
+    // ì–´ë””ì„œë“  UCardSaveGame:: ìœ¼ë¡œ ë°”ë¡œ í˜¸ì¶œ ê°€ëŠ¥
+    // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     /**
-     * SaveGame ÆÄÀÏÀ» µğ½ºÅ©¿¡¼­ ºÒ·¯¿Â´Ù.
-     * ÆÄÀÏÀÌ ¾øÀ¸¸é nullptr ¹İÈ¯.
+     * SaveGame íŒŒì¼ì„ ë””ìŠ¤í¬ì—ì„œ ë¶ˆëŸ¬ì˜¨ë‹¤.
+     * íŒŒì¼ì´ ì—†ìœ¼ë©´ nullptr ë°˜í™˜.
      */
     UFUNCTION(BlueprintCallable, Category = "Save")
     static UCardSaveGame* LoadSave();
 
     /**
-     * SaveGame °´Ã¼¸¦ µğ½ºÅ©¿¡ ÀúÀåÇÑ´Ù.
-     * nullptr ÀÌ¸é ¹«½Ã.
+     * SaveGame ê°ì²´ë¥¼ ë””ìŠ¤í¬ì— ì €ì¥í•œë‹¤.
+     * nullptr ì´ë©´ ë¬´ì‹œ.
      */
     UFUNCTION(BlueprintCallable, Category = "Save")
     static void WriteSave(UCardSaveGame* SaveGame);
 
     /**
-     * SaveGame ÆÄÀÏÀÌ ÀÖÀ¸¸é ºÒ·¯¿À°í, ¾øÀ¸¸é DT¿¡¼­ ÃÊ±â µ¦À» »ı¼ºÇÑ´Ù.
-     * °ÔÀÓ ½ÃÀÛ ½Ã 1È¸ È£Ãâ.
+     * SaveGame íŒŒì¼ì´ ìˆìœ¼ë©´ ë¶ˆëŸ¬ì˜¤ê³ , ì—†ìœ¼ë©´ DTì—ì„œ ì´ˆê¸° ë±ì„ ìƒì„±í•œë‹¤.
+     * ê²Œì„ ì‹œì‘ ì‹œ 1íšŒ í˜¸ì¶œ.
      *
-     * @param StarterDeckWarrior  DT_StarterDeck_Warrior (Pawn1 ÃÊ±â µ¦)
-     * @param StarterDeckMage     DT_StarterDeck_Mage    (Pawn2 ÃÊ±â µ¦)
-     * @return ·Îµå/»ı¼ºµÈ UCardSaveGame °´Ã¼
+     * @param StarterDeckWarrior  DT_StarterDeck_Warrior (Pawn1 ì´ˆê¸° ë±)
+     * @param StarterDeckMage     DT_StarterDeck_Mage    (Pawn2 ì´ˆê¸° ë±)
+     * @return ë¡œë“œ/ìƒì„±ëœ UCardSaveGame ê°ì²´
      */
     UFUNCTION(BlueprintCallable, Category = "Save")
     static UCardSaveGame* LoadOrCreate(UDataTable* StarterDeckWarrior, UDataTable* StarterDeckMage);
 
     /**
-     * ÀüÅõ Á¾·á ÈÄ µ¦ »óÅÂ¸¦ ÀúÀåÇÑ´Ù. (A¹æ½Ä)
-     * DrawPile + Hand + DiscardPile À» ÇÕÃÄ¼­ DeckCards ¿¡ ÀúÀå.
-     * APartyMemberPawn::SaveDeckToSaveGame() ¿¡¼­ È£Ãâ.
+     * ì „íˆ¬ ì¢…ë£Œ ì‹œ ë± ìƒíƒœë¥¼ ì €ì¥í•œë‹¤. (Aë°©ì‹)
+     * DrawPile + Hand + DiscardPile ì„ í•©ì³ì„œ DeckCards ì— ì €ì¥.
+     * APartyMemberPawn::SaveDeckToSaveGame() ì—ì„œ í˜¸ì¶œ.
      *
-     * @param PawnIndex    ÆÄÆ¼¿ø ÀÎµ¦½º (0 = Pawn1, 1 = Pawn2)
-     * @param DrawPile     ÇöÀç ³²Àº µå·Î¿ì ´õ¹Ì
-     * @param Hand         ÇöÀç ¼ÕÆĞ
-     * @param DiscardPile  ÇöÀç ¹ö¸®±â ´õ¹Ì
+     * @param PawnIndex    íŒŒí‹°ì› ì¸ë±ìŠ¤ (0 = Pawn1, 1 = Pawn2)
+     * @param DrawPile     í˜„ì¬ ë‚¨ì€ ë“œë¡œìš° ë”ë¯¸
+     * @param Hand         í˜„ì¬ ì†íŒ¨
+     * @param DiscardPile  í˜„ì¬ ë²„ë¦° ì¹´ë“œ ë”ë¯¸
      */
     UFUNCTION(BlueprintCallable, Category = "Save")
     static void SaveDeckAfterBattle(int32 PawnIndex,
-        const TArray<FName>& DrawPile,
-        const TArray<FName>& Hand,
-        const TArray<FName>& DiscardPile);
+        const TArray<int32>& DrawPile,
+        const TArray<int32>& Hand,
+        const TArray<int32>& DiscardPile);
 
     /**
-     * º¸»óÀ¸·Î Ä«µå¸¦ µ¦¿¡ Ãß°¡ÇÏ°í Áï½Ã ÀúÀåÇÑ´Ù.
+     * ë³´ìƒìœ¼ë¡œ ì¹´ë“œë¥¼ ë±ì— ì¶”ê°€í•˜ê³  ì¦‰ì‹œ ì €ì¥í•œë‹¤.
      *
-     * @param PawnIndex  ÆÄÆ¼¿ø ÀÎµ¦½º
-     * @param CardName   Ãß°¡ÇÒ Ä«µå ID (DT_Cards RowName)
+     * @param PawnIndex  íŒŒí‹°ì› ì¸ë±ìŠ¤
+     * @param CardID     ì¶”ê°€í•  ì¹´ë“œ ID (DT_Cards _CardID)
      */
     UFUNCTION(BlueprintCallable, Category = "Save")
-    static void AddCard(int32 PawnIndex, FName CardName);
+    static void AddCard(int32 PawnIndex, int32 CardID);
 
     /**
-     * µ¦¿¡¼­ Ä«µå¸¦ Á¦°ÅÇÏ°í Áï½Ã ÀúÀåÇÑ´Ù.
+     * íŠ¹ì • ì¹´ë“œë¥¼ ë±ì—ì„œ ì‚­ì œí•˜ê³  ì¦‰ì‹œ ì €ì¥í•œë‹¤.
      *
-     * @param PawnIndex  ÆÄÆ¼¿ø ÀÎµ¦½º
-     * @param CardName   Á¦°ÅÇÒ Ä«µå ID
+     * @param PawnIndex  íŒŒí‹°ì› ì¸ë±ìŠ¤
+     * @param CardID     ì‚­ì œí•  ì¹´ë“œ ID
      */
     UFUNCTION(BlueprintCallable, Category = "Save")
-    static void RemoveCard(int32 PawnIndex, FName CardName);
+    static void RemoveCard(int32 PawnIndex, int32 CardID);
 
     /**
-     * ÆÄÆ¼¿øÀÇ ÇöÀç µ¦ Ä«µå ¸ñ·ÏÀ» ¹İÈ¯ÇÑ´Ù.
+     * íŒŒí‹°ì›ì˜ í˜„ì¬ ë± ì¹´ë“œ ID ëª©ë¡ì„ ë°˜í™˜í•œë‹¤.
      *
-     * @param PawnIndex  ÆÄÆ¼¿ø ÀÎµ¦½º
-     * @return Ä«µå ID ¹è¿­
+     * @param PawnIndex  íŒŒí‹°ì› ì¸ë±ìŠ¤
+     * @return ì¹´ë“œ ID ë°°ì—´
      */
     UFUNCTION(BlueprintPure, Category = "Save")
-    static TArray<FName> GetDeckCards(int32 PawnIndex);
+    static TArray<int32> GetDeckCards(int32 PawnIndex);
 };

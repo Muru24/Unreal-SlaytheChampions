@@ -19,29 +19,29 @@ void UCardSaveGame::WriteSave(UCardSaveGame* SaveGame)
 {
     if (!SaveGame) return;
     UGameplayStatics::SaveGameToSlot(SaveGame, SlotName, UserIndex);
-    UE_LOG(LogTemp, Log, TEXT("[CardSaveGame] WriteSave completed"));
+    UE_LOG(LogTemp, Log, TEXT("[CardSaveGame] ì €ì¥ ì™„ë£Œ"));
 }
 
 UCardSaveGame* UCardSaveGame::LoadOrCreate(UDataTable* StarterDeckWarrior, UDataTable* StarterDeckMage)
 {
-    // ±âÁ¸ SaveGame ÆÄÀÏÀÌ ÀÖÀ¸¸é ºÒ·¯¿È
+    // ê¸°ì¡´ SaveGame íŒŒì¼ì´ ìˆìœ¼ë©´ ë¶ˆëŸ¬ì˜´
     UCardSaveGame* Save = LoadSave();
     if (Save)
     {
-        UE_LOG(LogTemp, Log, TEXT("[CardSaveGame] Loaded existing SaveGame"));
+        UE_LOG(LogTemp, Log, TEXT("[CardSaveGame] ê¸°ì¡´ SaveGame ë¡œë“œ ì„±ê³µ"));
         return Save;
     }
 
-    // SaveGame ¾øÀ¸¸é DT¿¡¼­ ÃÊ±â µ¦ »ı¼º
-    UE_LOG(LogTemp, Log, TEXT("[CardSaveGame] No SaveGame found - Creating from DataTable"));
+    // SaveGame ì—†ìœ¼ë©´ DTì—ì„œ ì´ˆê¸° ë± ìƒì„±
+    UE_LOG(LogTemp, Log, TEXT("[CardSaveGame] SaveGame ì—†ìŒ - DataTable ì—ì„œ ì´ˆê¸° ë± ìƒì„±"));
 
     Save = Cast<UCardSaveGame>(
         UGameplayStatics::CreateSaveGameObject(UCardSaveGame::StaticClass()));
 
-    // Pawn1(Warrior), Pawn2(Mage) 2¸í ÃÊ±âÈ­
+    // Pawn1(Warrior), Pawn2(Mage) 2ëª… ì´ˆê¸°í™”
     Save->PartyDecks.SetNum(2);
 
-    // Pawn1: Warrior ½ÃÀÛ µ¦
+    // Pawn1: Warrior ì‹œì‘ ë±
     Save->PartyDecks[0].JobClass = EJobClass::Warrior;
     if (StarterDeckWarrior)
     {
@@ -52,11 +52,11 @@ UCardSaveGame* UCardSaveGame::LoadOrCreate(UDataTable* StarterDeckWarrior, UData
             if (Row)
                 Save->PartyDecks[0].DeckCards.Add(Row->CardID);
         }
-        UE_LOG(LogTemp, Log, TEXT("[CardSaveGame] Warrior deck: %d cards"),
+        UE_LOG(LogTemp, Log, TEXT("[CardSaveGame] Warrior ë±: %dì¥"),
             Save->PartyDecks[0].DeckCards.Num());
     }
 
-    // Pawn2: Mage ½ÃÀÛ µ¦
+    // Pawn2: Mage ì‹œì‘ ë±
     Save->PartyDecks[1].JobClass = EJobClass::Mage;
     if (StarterDeckMage)
     {
@@ -67,7 +67,7 @@ UCardSaveGame* UCardSaveGame::LoadOrCreate(UDataTable* StarterDeckWarrior, UData
             if (Row)
                 Save->PartyDecks[1].DeckCards.Add(Row->CardID);
         }
-        UE_LOG(LogTemp, Log, TEXT("[CardSaveGame] Mage deck: %d cards"),
+        UE_LOG(LogTemp, Log, TEXT("[CardSaveGame] Mage ë±: %dì¥"),
             Save->PartyDecks[1].DeckCards.Num());
     }
 
@@ -76,19 +76,19 @@ UCardSaveGame* UCardSaveGame::LoadOrCreate(UDataTable* StarterDeckWarrior, UData
 }
 
 void UCardSaveGame::SaveDeckAfterBattle(int32 PawnIndex,
-    const TArray<FName>& DrawPile,
-    const TArray<FName>& Hand,
-    const TArray<FName>& DiscardPile)
+    const TArray<int32>& DrawPile,
+    const TArray<int32>& Hand,
+    const TArray<int32>& DiscardPile)
 {
     UCardSaveGame* Save = LoadSave();
     if (!Save || !Save->PartyDecks.IsValidIndex(PawnIndex))
     {
-        UE_LOG(LogTemp, Warning, TEXT("[CardSaveGame] SaveDeckAfterBattle: Invalid PawnIndex %d"), PawnIndex);
+        UE_LOG(LogTemp, Warning, TEXT("[CardSaveGame] SaveDeckAfterBattle: ì˜ëª»ëœ PawnIndex %d"), PawnIndex);
         return;
     }
 
-    // A¹æ½Ä: DrawPile + Hand + DiscardPile ÇÕÃÄ¼­ ÀúÀå
-    TArray<FName> Combined;
+    // Aë°©ì‹: DrawPile + Hand + DiscardPile í•©ì³ì„œ ì €ì¥
+    TArray<int32> Combined;
     Combined.Append(DrawPile);
     Combined.Append(Hand);
     Combined.Append(DiscardPile);
@@ -96,44 +96,44 @@ void UCardSaveGame::SaveDeckAfterBattle(int32 PawnIndex,
     Save->PartyDecks[PawnIndex].DeckCards = Combined;
     WriteSave(Save);
 
-    UE_LOG(LogTemp, Log, TEXT("[CardSaveGame] Pawn%d battle end saved - %d cards"),
+    UE_LOG(LogTemp, Log, TEXT("[CardSaveGame] Pawn%d ì „íˆ¬ ì¢…ë£Œ ì €ì¥ - %dì¥"),
         PawnIndex, Combined.Num());
 }
 
-void UCardSaveGame::AddCard(int32 PawnIndex, FName CardName)
+void UCardSaveGame::AddCard(int32 PawnIndex, int32 CardID)
 {
     UCardSaveGame* Save = LoadSave();
     if (!Save || !Save->PartyDecks.IsValidIndex(PawnIndex))
     {
-        UE_LOG(LogTemp, Warning, TEXT("[CardSaveGame] AddCard: Invalid PawnIndex %d"), PawnIndex);
+        UE_LOG(LogTemp, Warning, TEXT("[CardSaveGame] AddCard: ì˜ëª»ëœ PawnIndex %d"), PawnIndex);
         return;
     }
 
-    Save->PartyDecks[PawnIndex].DeckCards.Add(CardName);
+    Save->PartyDecks[PawnIndex].DeckCards.Add(CardID);
     WriteSave(Save);
 
-    UE_LOG(LogTemp, Log, TEXT("[CardSaveGame] Pawn%d card added - %s (total %d)"),
-        PawnIndex, *CardName.ToString(),
+    UE_LOG(LogTemp, Log, TEXT("[CardSaveGame] Pawn%d ì¹´ë“œ ì¶”ê°€ - ID:%d (ì´ %dì¥)"),
+        PawnIndex, CardID,
         Save->PartyDecks[PawnIndex].DeckCards.Num());
 }
 
-void UCardSaveGame::RemoveCard(int32 PawnIndex, FName CardName)
+void UCardSaveGame::RemoveCard(int32 PawnIndex, int32 CardID)
 {
     UCardSaveGame* Save = LoadSave();
     if (!Save || !Save->PartyDecks.IsValidIndex(PawnIndex))
     {
-        UE_LOG(LogTemp, Warning, TEXT("[CardSaveGame] RemoveCard: Invalid PawnIndex %d"), PawnIndex);
+        UE_LOG(LogTemp, Warning, TEXT("[CardSaveGame] RemoveCard: ì˜ëª»ëœ PawnIndex %d"), PawnIndex);
         return;
     }
 
-    Save->PartyDecks[PawnIndex].DeckCards.Remove(CardName);
+    Save->PartyDecks[PawnIndex].DeckCards.Remove(CardID);
     WriteSave(Save);
 
-    UE_LOG(LogTemp, Log, TEXT("[CardSaveGame] Pawn%d card removed - %s"),
-        PawnIndex, *CardName.ToString());
+    UE_LOG(LogTemp, Log, TEXT("[CardSaveGame] Pawn%d ì¹´ë“œ ì‚­ì œ - ID:%d"),
+        PawnIndex, CardID);
 }
 
-TArray<FName> UCardSaveGame::GetDeckCards(int32 PawnIndex)
+TArray<int32> UCardSaveGame::GetDeckCards(int32 PawnIndex)
 {
     UCardSaveGame* Save = LoadSave();
     if (!Save || !Save->PartyDecks.IsValidIndex(PawnIndex))

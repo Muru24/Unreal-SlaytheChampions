@@ -20,6 +20,36 @@ static void ApplySpriteToImage(UImage* ImageWidget, UPaperSprite* Sprite)
     ImageWidget->SetBrush(Brush);
 }
 
+/**
+ * Description 텍스트의 태그를 실제 수치로 치환하는 내부 헬퍼 함수.
+ * DT_Cards 의 Description 에 {Damage}, {Block} 등 태그를 사용하면
+ * 카드 수치가 바뀔 때 자동으로 텍스트도 갱신된다.
+ *
+ * 사용 가능한 태그:
+ *   {Damage}     피해량
+ *   {Block}      방어도
+ *   {DrawCount}  드로우 수
+ *   {UsingCount} 사용 횟수
+ *   {HealAmount} 회복량
+ *   {EffectValue} 특수 효과 수치
+ *
+ * @param InCardData  태그 치환에 사용할 카드 데이터
+ * @return 태그가 수치로 치환된 최종 텍스트
+ */
+static FText BuildDescription(const FCardDataRow& InCardData)
+{
+    FString Desc = InCardData.Description.ToString();
+
+    Desc = Desc.Replace(TEXT("{Damage}"), *FString::FromInt(InCardData.Damage));
+    Desc = Desc.Replace(TEXT("{Block}"), *FString::FromInt(InCardData.Block));
+    Desc = Desc.Replace(TEXT("{DrawCount}"), *FString::FromInt(InCardData.DrawCount));
+    Desc = Desc.Replace(TEXT("{UsingCount}"), *FString::FromInt(InCardData.UsingCount));
+    Desc = Desc.Replace(TEXT("{HealAmount}"), *FString::FromInt(InCardData.HealAmount));
+    Desc = Desc.Replace(TEXT("{EffectValue}"), *FString::FromInt(InCardData.EffectValue));
+
+    return FText::FromString(Desc);
+}
+
 void UCardWidget::SetCardData(const FCardDataRow& InCardData, UCardStyleDataAsset* InStyle)
 {
     // 현재 카드 데이터 저장 (Blueprint 에서 조회 가능)
@@ -47,8 +77,9 @@ void UCardWidget::SetCardData(const FCardDataRow& InCardData, UCardStyleDataAsse
     if (CardNameText)
         CardNameText->SetText(InCardData.CardName);
 
+    // Description 의 {Damage}, {Block} 등 태그를 실제 수치로 치환 후 적용
     if (DescriptionText)
-        DescriptionText->SetText(InCardData.Description);
+        DescriptionText->SetText(BuildDescription(InCardData));
 
     if (CostText)
         CostText->SetText(FText::AsNumber(InCardData.Cost));

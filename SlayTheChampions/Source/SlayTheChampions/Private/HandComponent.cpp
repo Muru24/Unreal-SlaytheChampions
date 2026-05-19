@@ -6,41 +6,41 @@ UHandComponent::UHandComponent()
     PrimaryComponentTick.bCanEverTick = false;
 }
 
-// ¦¡¦¡ ÃÊ±âÈ­ ¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡
+// â”€â”€ ì´ˆê¸°í™” â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
-void UHandComponent::InitializeDeck(const TArray<FName>& InDeckNames)
+void UHandComponent::InitializeDeck(const TArray<int32>& InDeckIDs)
 {
-    DrawPile = InDeckNames;
+    DrawPile = InDeckIDs;
     Hand.Reset();
     DiscardPile.Reset();
 
-    // ÃÊ±â ¼ÅÇÃ
+    // ì´ˆê¸° ì…”í”Œ
     Algo::RandomShuffle(DrawPile);
 
     BroadcastHandChanged();
 }
 
-// ¦¡¦¡ µå·Î¿ì ¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡
+// â”€â”€ ë“œë¡œìš° â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 void UHandComponent::DrawStartOfTurn()
 {
     DrawCards(DefaultDrawCount);
 }
 
-TArray<FName> UHandComponent::DrawCards(int32 Count)
+TArray<int32> UHandComponent::DrawCards(int32 Count)
 {
-    TArray<FName> Drawn;
+    TArray<int32> Drawn;
 
     for (int32 i = 0; i < Count; ++i)
     {
-        // DrawPile ÀÌ ºñ¾úÀ¸¸é DiscardPile Àç¼øÈ¯
+        // DrawPile ì´ ë¹„ë©´ DiscardPile ìž¬ìˆœí™˜
         if (DrawPile.IsEmpty())
         {
-            if (DiscardPile.IsEmpty()) break;  // µÑ ´Ù ºñ¾úÀ¸¸é µå·Î¿ì ºÒ°¡
+            if (DiscardPile.IsEmpty()) break;  // ë‘˜ ë‹¤ ë¹„ì–´ìžˆìœ¼ë©´ ë“œë¡œìš° ë¶ˆê°€
             RecycleDiscardIntoDraw();
         }
 
-        FName Card = DrawPile.Pop();
+        int32 Card = DrawPile.Pop();
         Hand.Add(Card);
         Drawn.Add(Card);
 
@@ -55,28 +55,28 @@ TArray<FName> UHandComponent::DrawCards(int32 Count)
     return Drawn;
 }
 
-// ¦¡¦¡ Ä«µå »ç¿ë ¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡
+// â”€â”€ ì¹´ë“œ ì‚¬ìš© â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
-bool UHandComponent::PlayCard(FName CardName)
+bool UHandComponent::PlayCard(int32 CardID)
 {
-    const int32 Idx = Hand.IndexOfByKey(CardName);
+    const int32 Idx = Hand.IndexOfByKey(CardID);
     if (Idx == INDEX_NONE)
     {
         UE_LOG(LogTemp, Warning,
-            TEXT("UHandComponent::PlayCard ? '%s' not found in hand."),
-            *CardName.ToString());
+            TEXT("UHandComponent::PlayCard - CardID %d not found in hand."),
+            CardID);
         return false;
     }
 
     Hand.RemoveAt(Idx);
-    DiscardPile.Add(CardName);
+    DiscardPile.Add(CardID);
 
-    OnCardPlayed.Broadcast(CardName);
+    OnCardPlayed.Broadcast(CardID);
     BroadcastHandChanged();
     return true;
 }
 
-// ¦¡¦¡ ÅÏ Á¾·á ¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡
+// â”€â”€ í„´ ì¢…ë£Œ â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 void UHandComponent::DiscardHand()
 {
@@ -85,7 +85,7 @@ void UHandComponent::DiscardHand()
     BroadcastHandChanged();
 }
 
-// ¦¡¦¡ Private ¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡
+// â”€â”€ Private â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 void UHandComponent::RecycleDiscardIntoDraw()
 {
@@ -94,7 +94,7 @@ void UHandComponent::RecycleDiscardIntoDraw()
     Algo::RandomShuffle(DrawPile);
 
     UE_LOG(LogTemp, Log,
-        TEXT("UHandComponent: DiscardPile recycled ¡æ DrawPile (%d cards, reshuffled)."),
+        TEXT("UHandComponent: DiscardPile ìž¬ìˆœí™˜ â†’ DrawPile (%dìž¥, ì…”í”Œ ì™„ë£Œ)."),
         DrawPile.Num());
 }
 

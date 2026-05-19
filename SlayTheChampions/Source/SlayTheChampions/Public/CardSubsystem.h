@@ -9,16 +9,16 @@
  * UCardSubsystem
  *
  * GameInstance Subsystem.
- * - DataTable ¿¡¼­ Ä«µå µ¥ÀÌÅÍ¸¦ ·Îµå¡¤Ä³½ÃÇÑ´Ù.
- * - Á÷¾÷º° µ¦ Ç®, º¸»ó Ä«µå Ç® Á¶È¸¸¦ Á¦°øÇÑ´Ù.
- * - Á÷Á¢ ÂüÁ¶ ¾øÀÌ ¾îµğ¼­µç GEngine->GetEngineSubsystem ·ù·Î Á¢±Ù °¡´É.
+ * - DataTable ì—ì„œ ì¹´ë“œ ë°ì´í„°ë¥¼ ë¡œë“œÂ·ìºì‹±í•œë‹¤.
+ * - ì§ì—…ë³„ ë± í’€, ë³´ìƒ ì¹´ë“œ í’€ ì¡°íšŒë¥¼ ë‹´ë‹¹í•œë‹¤.
+ * - ê²Œì„ ì–´ë””ì„œë“  GEngine->GetEngineSubsystem ì—†ì´ ë°”ë¡œ ì ‘ê·¼.
  *
- * »ç¿ë ¿¹ (C++):
+ * ì‚¬ìš© ì˜ˆ (C++):
  *   UCardSubsystem* CS = GetGameInstance()->GetSubsystem<UCardSubsystem>();
- *   const FCardDataRow* Row = CS->GetCard(FName("Warrior_Attack"));
+ *   const FCardDataRow* Row = CS->GetCard(101);
  *
- * »ç¿ë ¿¹ (Blueprint):
- *   GetGameInstance ¡æ GetSubsystem(CardSubsystem) -> GetCard / GetCardsByClass
+ * ì‚¬ìš© ì˜ˆ (Blueprint):
+ *   GetGameInstance â†’ GetSubsystem(CardSubsystem) -> GetCard / GetCardIDsByClass
  */
 UCLASS()
 class SLAYTHECHAMPIONS_API UCardSubsystem : public UGameInstanceSubsystem
@@ -26,52 +26,52 @@ class SLAYTHECHAMPIONS_API UCardSubsystem : public UGameInstanceSubsystem
     GENERATED_BODY()
 
 public:
-    // ¦¡¦¡ Subsystem Lifecycle ¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡
+    // â”€â”€ Subsystem Lifecycle â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     virtual void Initialize(FSubsystemCollectionBase& Collection) override;
 
-    // ¦¡¦¡ µ¥ÀÌÅÍ Å×ÀÌºí ¼³Á¤ ¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡
+    // â”€â”€ ë°ì´í„° í…Œì´ë¸” ë¡œë“œ â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     /**
-     * ·±Å¸ÀÓ¿¡ DataTable À» ±³Ã¼ÇÏ°Å³ª ´Ù½Ã ·ÎµåÇÒ ¶§ È£Ãâ.
-     * Initialize ¿¡¼­ ÀÚµ¿À¸·Î È£ÃâµÇ¹Ç·Î º¸Åë Á÷Á¢ È£ÃâÇÒ ÇÊ¿ä ¾øÀ½.
+     * ëŸ°íƒ€ì„ì— DataTable ì„ êµì²´í•˜ê±°ë‚˜ ë‹¤ì‹œ ë¡œë“œí•  ë•Œ í˜¸ì¶œ.
+     * Initialize ì—ì„œ ìë™ìœ¼ë¡œ í˜¸ì¶œë˜ë¯€ë¡œ ë³„ë„ í˜¸ì¶œì€ ë¶ˆí•„ìš”.
      */
     UFUNCTION(BlueprintCallable, Category = "Card|Data")
     void LoadCardDataTable(UDataTable* InTable);
 
-    // ¦¡¦¡ Ä«µå Á¶È¸ ¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡
+    // â”€â”€ ì¹´ë“œ ì¡°íšŒ â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     /**
-     * RowName À¸·Î ´ÜÀÏ Ä«µå µ¥ÀÌÅÍ¸¦ °¡Á®¿Â´Ù. ¾øÀ¸¸é nullptr.
-     * (const Æ÷ÀÎÅÍ ¹İÈ¯Àº UFUNCTION ºÒ°¡ -> C++ Àü¿ë)
+     * CardID ë¡œ ë‹¨ì¼ ì¹´ë“œ ë°ì´í„°ë¥¼ ê°€ì ¸ì˜¨ë‹¤. ì—†ìœ¼ë©´ nullptr.
+     * (const í¬ì¸í„° ë°˜í™˜ì€ UFUNCTION ë¶ˆê°€ -> C++ ì „ìš©)
      */
-    const FCardDataRow* GetCard(FName RowName) const;
+    const FCardDataRow* GetCard(int32 CardID) const;
 
-    /** Á÷¾÷¿¡ ÇØ´çÇÏ´Â Ä«µå RowName ¸ñ·Ï ¹İÈ¯ (Any Á÷¾÷ Ä«µå Æ÷ÇÔ). */
+    /** ì§ì—…ì— í•´ë‹¹í•˜ëŠ” ì¹´ë“œ ID ëª©ë¡ ë°˜í™˜ (Any í¬í•¨ ì¹´ë“œ í¬í•¨). */
     UFUNCTION(BlueprintCallable, Category = "Card|Query")
-    TArray<FName> GetCardNamesByClass(EJobClass JobClass) const;
+    TArray<int32> GetCardIDsByClass(EJobClass JobClass) const;
 
     /**
-     * Á÷¾÷¿¡ ÇØ´çÇÏ´Â FCardDataRow Æ÷ÀÎÅÍ ¸ñ·Ï ¹İÈ¯.
-     * (const Æ÷ÀÎÅÍ ¹è¿­Àº UFUNCTION ºÒ°¡ -> C++ Àü¿ë)
+     * ì§ì—…ì— í•´ë‹¹í•˜ëŠ” FCardDataRow í¬ì¸í„° ëª©ë¡ ë°˜í™˜.
+     * (const í¬ì¸í„° ë°°ì—´ì€ UFUNCTION ë¶ˆê°€ -> C++ ì „ìš©)
      */
     TArray<const FCardDataRow*> GetCardsByClass(EJobClass JobClass) const;
 
     /**
-     * º¸»ó Ä«µå Ç®: Á÷¾÷ + Èñ±Íµµ ±â¹İÀ¸·Î ÈÄº¸ ¸ñ·Ï ¹İÈ¯.
-     * (Èñ±Íµµ ÇÊÅÍ¸µ ¾øÀÌ ÀüÃ¼¸¦ ¿øÇÏ¸é Rarity = Normal ÀÌ¿Ü¸¦ Any ·Î Ã³¸®)
+     * ë³´ìƒ ì¹´ë“œ í’€: ì§ì—… + í¬ê·€ë„ ì¡°ê±´ìœ¼ë¡œ ì¹´ë“œ ID ëª©ë¡ ë°˜í™˜.
+     * (í¬ê·€ë„ í•„í„°ë¥¼ Normal ë¯¸ë§Œìœ¼ë¡œ ê±¸ë©´ Rarity = Normal ì´ìƒ Any ë„ ì²˜ë¦¬)
      */
     UFUNCTION(BlueprintCallable, Category = "Card|Reward")
-    TArray<FName> GetRewardPool(EJobClass JobClass, ECardRarity MinRarity) const;
+    TArray<int32> GetRewardPool(EJobClass JobClass, ECardRarity MinRarity) const;
 
-    /** ÀüÃ¼ Ä«µå RowName ¸ñ·Ï */
+    /** ì „ì²´ ì¹´ë“œ ID ëª©ë¡ */
     UFUNCTION(BlueprintCallable, Category = "Card|Query")
-    TArray<FName> GetAllCardNames() const;
+    TArray<int32> GetAllCardIDs() const;
 
 private:
-    // ¦¡¦¡ ³»ºÎ »óÅÂ ¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡
-    /** ¿¡µğÅÍ¿¡¼­ ÇÒ´ç: Content/Data/DT_Cards */
+    // â”€â”€ ë‚´ë¶€ ë©¤ë²„ â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    /** ì—ë””í„°ì—ì„œ í• ë‹¹: Content/Data/DT_Cards */
     UPROPERTY()
     TObjectPtr<UDataTable> CardDataTable;
 
-    /** Rarity ¼öÄ¡È­ ÇïÆÛ (º¸»ó Ç® ÇÊÅÍ¸µ¿ë) */
+    /** Rarity ìˆ˜ì¹˜í™” í—¬í¼ (ë³´ìƒ í’€ í•„í„°ë§ìš©) */
     static int32 RarityToInt(ECardRarity Rarity);
 };

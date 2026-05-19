@@ -81,11 +81,11 @@ void AHandComponentTester::Test_DrawStartOfTurn(UHandComponent* HC, const FStrin
     const int32 Expected = HC->DefaultDrawCount;
 
     // 드로우된 카드 목록 출력
-    const TArray<FName>& Hand = HC->GetHand();
+    const TArray<int32>& Hand = HC->GetHand();
     Info(TC, FString::Printf(TEXT("드로우 후 손패 (%d장):"), Hand.Num()));
-    for (const FName& CardName : Hand)
+    for (const int32 CardID : Hand)
     {
-        Info(TC, FString::Printf(TEXT("  Hand: %s"), *CardName.ToString()));
+        Info(TC, FString::Printf(TEXT("  Hand: %d"), CardID));
     }
 
     if (DrawBefore >= Expected)
@@ -114,7 +114,7 @@ void AHandComponentTester::Test_PlayCard(UHandComponent* HC, const FString& Labe
         return;
     }
 
-    const FName TargetCard = HC->GetHand()[0];
+    const int32 TargetCard = HC->GetHand()[0];
     const int32 HandBefore = HC->GetHandCount();
     const int32 DiscardBefore = HC->GetDiscardPileCount();
 
@@ -122,22 +122,22 @@ void AHandComponentTester::Test_PlayCard(UHandComponent* HC, const FString& Labe
 
     if (!bSuccess)
     {
-        Fail(TC, FString::Printf(TEXT("PlayCard 실패 - 카드명: %s"), *TargetCard.ToString()));
+        Fail(TC, FString::Printf(TEXT("PlayCard 실패 - CardID: %d"), TargetCard));
         return;
     }
 
     const int32 HandAfter = HC->GetHandCount();
     const int32 DiscardAfter = HC->GetDiscardPileCount();
 
-    Info(TC, FString::Printf(TEXT("사용 카드: %s | Hand:%d->%d | Discard:%d->%d"),
-        *TargetCard.ToString(), HandBefore, HandAfter, DiscardBefore, DiscardAfter));
+    Info(TC, FString::Printf(TEXT("사용 카드: %d | Hand:%d->%d | Discard:%d->%d"),
+        TargetCard, HandBefore, HandAfter, DiscardBefore, DiscardAfter));
 
     if (HandAfter == HandBefore - 1 && DiscardAfter == DiscardBefore + 1)
         Pass(TC, TEXT("Hand -1, Discard +1 정상"));
     else
         Fail(TC, TEXT("카드 이동 수치 불일치"));
 
-    const bool bFail = HC->PlayCard(FName("INVALID_CARD_9999"));
+    const bool bFail = HC->PlayCard(-1);
     if (!bFail)
         Pass(TC, TEXT("없는 카드 PlayCard -> false 반환 정상"));
     else

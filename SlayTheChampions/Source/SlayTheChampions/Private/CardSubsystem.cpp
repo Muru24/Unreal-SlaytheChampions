@@ -1,14 +1,14 @@
 #include "CardSubsystem.h"
 #include "Engine/DataTable.h"
 
-// ¦¡¦¡ Lifecycle ¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡
+// â”€â”€ Lifecycle â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 void UCardSubsystem::Initialize(FSubsystemCollectionBase& Collection)
 {
     Super::Initialize(Collection);
 
-    // ¿¡µðÅÍ ÁöÁ¤ °æ·Î¿¡¼­ DataTable ÀÚµ¿ ·Îµå
-    // ½ÇÁ¦ °æ·Î´Â ÇÁ·ÎÁ§Æ®¿¡ ¸Â°Ô ¼öÁ¤
+    // ì—ë””í„° ì—†ì´ë„ DataTable ìžë™ ë¡œë“œ
+    // ì‹¤ì œ í”„ë¡œì íŠ¸ì— ë§žê²Œ ê²½ë¡œ ìˆ˜ì • í•„ìš”
     static const FSoftObjectPath CardTablePath(
         TEXT("01/DT_Cards"));
 
@@ -19,13 +19,13 @@ void UCardSubsystem::Initialize(FSubsystemCollectionBase& Collection)
     else
     {
         UE_LOG(LogTemp, Warning,
-            TEXT("UCardSubsystem: DT_Cards not found at '%s'. "
-                "Call LoadCardDataTable() manually."),
+            TEXT("UCardSubsystem: DT_Cards ë¥¼ '%s' ê²½ë¡œì—ì„œ ì°¾ì„ ìˆ˜ ì—†ìŒ. "
+                "LoadCardDataTable() ì„ ì§ì ‘ í˜¸ì¶œí•˜ì„¸ìš”."),
             *CardTablePath.ToString());
     }
 }
 
-// ¦¡¦¡ Public API ¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡
+// â”€â”€ Public API â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 void UCardSubsystem::LoadCardDataTable(UDataTable* InTable)
 {
@@ -33,35 +33,43 @@ void UCardSubsystem::LoadCardDataTable(UDataTable* InTable)
 
     if (!CardDataTable)
     {
-        UE_LOG(LogTemp, Error, TEXT("UCardSubsystem: Null DataTable passed to LoadCardDataTable."));
+        UE_LOG(LogTemp, Error, TEXT("UCardSubsystem: LoadCardDataTable ì— Null DataTable ì´ ì „ë‹¬ë¨."));
         return;
     }
 
     UE_LOG(LogTemp, Log,
-        TEXT("UCardSubsystem: Loaded DataTable '%s' (%d rows)."),
+        TEXT("UCardSubsystem: DataTable '%s' ë¡œë“œ ì™„ë£Œ (%d rows)."),
         *CardDataTable->GetName(),
         CardDataTable->GetRowNames().Num());
 }
 
-const FCardDataRow* UCardSubsystem::GetCard(FName RowName) const
+const FCardDataRow* UCardSubsystem::GetCard(int32 CardID) const
 {
     if (!CardDataTable) return nullptr;
-    return CardDataTable->FindRow<FCardDataRow>(RowName, TEXT("UCardSubsystem::GetCard"));
+
+    for (const FName& RowName : CardDataTable->GetRowNames())
+    {
+        const FCardDataRow* Row =
+            CardDataTable->FindRow<FCardDataRow>(RowName, TEXT("UCardSubsystem::GetCard"));
+        if (Row && Row->_CardID == CardID)
+            return Row;
+    }
+    return nullptr;
 }
 
-TArray<FName> UCardSubsystem::GetCardNamesByClass(EJobClass JobClass) const
+TArray<int32> UCardSubsystem::GetCardIDsByClass(EJobClass JobClass) const
 {
-    TArray<FName> Result;
+    TArray<int32> Result;
     if (!CardDataTable) return Result;
 
     for (const FName& RowName : CardDataTable->GetRowNames())
     {
         const FCardDataRow* Row =
-            CardDataTable->FindRow<FCardDataRow>(RowName, TEXT("GetCardNamesByClass"));
+            CardDataTable->FindRow<FCardDataRow>(RowName, TEXT("GetCardIDsByClass"));
 
         if (Row && (Row->RequiredClass == JobClass || Row->RequiredClass == EJobClass::Any))
         {
-            Result.Add(RowName);
+            Result.Add(Row->_CardID);
         }
     }
     return Result;
@@ -85,9 +93,9 @@ TArray<const FCardDataRow*> UCardSubsystem::GetCardsByClass(EJobClass JobClass) 
     return Result;
 }
 
-TArray<FName> UCardSubsystem::GetRewardPool(EJobClass JobClass, ECardRarity MinRarity) const
+TArray<int32> UCardSubsystem::GetRewardPool(EJobClass JobClass, ECardRarity MinRarity) const
 {
-    TArray<FName> Result;
+    TArray<int32> Result;
     if (!CardDataTable) return Result;
 
     const int32 MinRarityInt = RarityToInt(MinRarity);
@@ -106,19 +114,28 @@ TArray<FName> UCardSubsystem::GetRewardPool(EJobClass JobClass, ECardRarity MinR
 
         if (bClassOk && bRarityOk)
         {
-            Result.Add(RowName);
+            Result.Add(Row->_CardID);
         }
     }
     return Result;
 }
 
-TArray<FName> UCardSubsystem::GetAllCardNames() const
+TArray<int32> UCardSubsystem::GetAllCardIDs() const
 {
-    if (!CardDataTable) return {};
-    return CardDataTable->GetRowNames();
+    TArray<int32> Result;
+    if (!CardDataTable) return Result;
+
+    for (const FName& RowName : CardDataTable->GetRowNames())
+    {
+        const FCardDataRow* Row =
+            CardDataTable->FindRow<FCardDataRow>(RowName, TEXT("GetAllCardIDs"));
+        if (Row)
+            Result.Add(Row->_CardID);
+    }
+    return Result;
 }
 
-// ¦¡¦¡ Private Helpers ¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡
+// â”€â”€ Private Helpers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 int32 UCardSubsystem::RarityToInt(ECardRarity Rarity)
 {

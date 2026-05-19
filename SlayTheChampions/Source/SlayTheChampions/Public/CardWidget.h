@@ -104,3 +104,5 @@ private:
     UPROPERTY(BlueprintReadOnly, Category = "Card|UI", meta = (AllowPrivateAccess = "true"))
     FCardDataRow CurrentCardData;
 };
+
+static FText BuildDescription(const FCardDataRow& InCardData);

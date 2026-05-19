@@ -5,24 +5,24 @@
 #include "CardDataTypes.h"
 #include "HandComponent.generated.h"
 
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnHandChanged, const TArray<FName>&, CurrentHand);
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnCardDrawn, FName, DrawnCard);
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnCardPlayed, FName, PlayedCard);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnHandChanged, const TArray<int32>&, CurrentHand);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnCardDrawn, int32, DrawnCard);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnCardPlayed, int32, PlayedCard);
 
 /**
  * UHandComponent
  *
- * ÆÄÆ¼¿ø 1¸íÀÇ µ¦/¼ÕÆĞ/¹ö¸®±â ´õ¹Ì¸¦ ´ã´çÇÏ´Â ÄÄÆ÷³ÍÆ®.
- * Æ¯Á¤ Actor ¿¡ Á¾¼ÓµÇÁö ¾Êµµ·Ï ActorComponent ·Î ±¸Çö.
- * Enemy ¿¡µµ ºÙ¿©¼­ Àç»ç¿ë °¡´É.
+ * íŒŒí‹°ì› 1ëª…ì˜ ë±/ë“œë¡œìš°/ë²„ë¦°íŒ¨ ìƒíƒœë¥¼ ê´€ë¦¬í•˜ëŠ” ì»´í¬ë„ŒíŠ¸.
+ * íŠ¹ì • Actor ì— ì¢…ì†ë˜ì§€ ì•Šë„ë¡ ActorComponent ë¡œ ì„¤ê³„.
+ * Enemy ì—ë„ ë¶™ì—¬ì„œ ì¬ì‚¬ìš© ê°€ëŠ¥.
  *
- * Ã¥ÀÓ:
- *  - µ¦ ÃÊ±âÈ­ ¹× ¼ÅÇÃ
- *  - µå·Î¿ì (DrawPile ºÎÁ· ½Ã DiscardPile ÀÚµ¿ Àç¼øÈ¯)
- *  - Ä«µå »ç¿ë -> ¼ÕÆĞ¿¡¼­ Á¦°Å -> DiscardPile ÀÌµ¿
- *  - ÅÏ Á¾·á ½Ã ¼ÕÆĞ ÀüÃ¼ ¹ö¸®±â
+ * ì±…ì„:
+ *  - ë± ì´ˆê¸°í™” ë° ê´€ë¦¬
+ *  - ë“œë¡œìš° (DrawPile ì†Œì§„ ì‹œ DiscardPile ìë™ ì¬ìˆœí™˜)
+ *  - ì¹´ë“œ ì‚¬ìš© -> ì„œë¸Œì‹œìŠ¤í…œì—ì„œ íš¨ê³¼ -> DiscardPile ì´ë™
+ *  - í„´ ì¢…ë£Œ ì‹œ ì†íŒ¨ ì „ì²´ ë²„ë¦¬ê¸°
  *
- * ÀüÅõ ±ÔÄ¢(µ¥¹ÌÁö °è»ê µî)Àº ÀÌ ÄÄÆ÷³ÍÆ® ¹Û¿¡¼­ Ã³¸®ÇÑ´Ù.
+ * ì¹´ë“œ íš¨ê³¼ ì²˜ë¦¬(ë°ë¯¸ì§€ ê³„ì‚° ë“±)ëŠ” ì´ ì»´í¬ë„ŒíŠ¸ ë°–ì—ì„œ ì²˜ë¦¬í•œë‹¤.
  */
 UCLASS(ClassGroup = "Card", meta = (BlueprintSpawnableComponent))
 class SLAYTHECHAMPIONS_API UHandComponent : public UActorComponent
@@ -32,7 +32,7 @@ class SLAYTHECHAMPIONS_API UHandComponent : public UActorComponent
 public:
     UHandComponent();
 
-    // ¦¡¦¡ ÀÌº¥Æ® ¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡
+    // â”€â”€ ì´ë²¤íŠ¸ â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     UPROPERTY(BlueprintAssignable, Category = "Card|Hand")
     FOnHandChanged OnHandChanged;
 
@@ -42,53 +42,53 @@ public:
     UPROPERTY(BlueprintAssignable, Category = "Card|Hand")
     FOnCardPlayed OnCardPlayed;
 
-    // ¦¡¦¡ ¼³Á¤ ¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡
-    // ÅÏ ½ÃÀÛ ±âº» µå·Î¿ì ¼ö
+    // â”€â”€ ì„¤ì • ê°’ â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // í„´ ì‹œì‘ ê¸°ë³¸ ë“œë¡œìš° ìˆ˜
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Card|Hand",
         meta = (ClampMin = "1"))
     int32 DefaultDrawCount = 5;
 
-    // ¦¡¦¡ ÃÊ±âÈ­ ¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡
+    // â”€â”€ ì´ˆê¸°í™” â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
-    // µ¦À» ¼³Á¤ÇÏ°í ¼ÅÇÃ ÈÄ °ÔÀÓ ½ÃÀÛ ÁØºñ
+    // ë±ì„ ì „ë‹¬í•˜ê³  ì†íŒ¨ ë° ë”ë¯¸ ì´ˆê¸° ì„¤ì •
     UFUNCTION(BlueprintCallable, Category = "Card|Hand")
-    void InitializeDeck(const TArray<FName>& InDeckNames);
+    void InitializeDeck(const TArray<int32>& InDeckIDs);
 
-    // ¦¡¦¡ µå·Î¿ì ¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡
+    // â”€â”€ ë“œë¡œìš° â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
-    // DefaultDrawCount ¸¸Å­ µå·Î¿ì
+    // DefaultDrawCount ë§Œí¼ ë“œë¡œìš°
     UFUNCTION(BlueprintCallable, Category = "Card|Hand")
     void DrawStartOfTurn();
 
-    // NÀå µå·Î¿ì. DrawPile ºÎÁ· ½Ã DiscardPile Àç¼øÈ¯
+    // Nì¥ ë“œë¡œìš°. DrawPile ì†Œì§„ ì‹œ DiscardPile ì¬ìˆœí™˜
     UFUNCTION(BlueprintCallable, Category = "Card|Hand")
-    TArray<FName> DrawCards(int32 Count);
+    TArray<int32> DrawCards(int32 Count);
 
-    // ¦¡¦¡ Ä«µå »ç¿ë ¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡
+    // â”€â”€ ì¹´ë“œ ì‚¬ìš© â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
-    // ¼ÕÆĞ¿¡¼­ Ä«µå¸¦ »ç¿ë (DiscardPile ÀÌµ¿). ¼ÕÆĞ¿¡ ¾øÀ¸¸é false ¹İÈ¯
+    // ì†íŒ¨ì—ì„œ ì¹´ë“œë¥¼ ì‚¬ìš© (DiscardPile ì´ë™). ì†íŒ¨ì— ì—†ìœ¼ë©´ false ë°˜í™˜
     UFUNCTION(BlueprintCallable, Category = "Card|Hand")
-    bool PlayCard(FName CardName);
+    bool PlayCard(int32 CardID);
 
-    // ¦¡¦¡ ÅÏ Á¾·á ¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡
+    // â”€â”€ í„´ ì¢…ë£Œ â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
-    // ¼ÕÆĞ ÀüÃ¼¸¦ DiscardPile ·Î ÀÌµ¿
+    // ì†íŒ¨ ì „ì²´ë¥¼ DiscardPile ë¡œ ì´ë™
     UFUNCTION(BlueprintCallable, Category = "Card|Hand")
     void DiscardHand();
 
-    // ¦¡¦¡ Á¶È¸ ¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡
+    // â”€â”€ ì¡°íšŒ â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
-    // ÇöÀç ¼ÕÆĞ ¹İÈ¯
+    // í˜„ì¬ ì†íŒ¨ ë°˜í™˜
     UFUNCTION(BlueprintPure, Category = "Card|Hand")
-    const TArray<FName>& GetHand() const { return Hand; }
+    const TArray<int32>& GetHand() const { return Hand; }
 
-    // DrawPile ÀüÃ¼ ¹İÈ¯ (SaveGame ÀúÀå¿ë)
+    // DrawPile ì „ì²´ ë°˜í™˜ (SaveGame ì—°ë™ìš©)
     UFUNCTION(BlueprintPure, Category = "Card|Hand")
-    const TArray<FName>& GetDrawPile() const { return DrawPile; }
+    const TArray<int32>& GetDrawPile() const { return DrawPile; }
 
-    // DiscardPile ÀüÃ¼ ¹İÈ¯ (SaveGame ÀúÀå¿ë)
+    // DiscardPile ì „ì²´ ë°˜í™˜ (SaveGame ì—°ë™ìš©)
     UFUNCTION(BlueprintPure, Category = "Card|Hand")
-    const TArray<FName>& GetDiscardPile() const { return DiscardPile; }
+    const TArray<int32>& GetDiscardPile() const { return DiscardPile; }
 
     UFUNCTION(BlueprintPure, Category = "Card|Hand")
     int32 GetDrawPileCount() const { return DrawPile.Num(); }
@@ -99,17 +99,17 @@ public:
     UFUNCTION(BlueprintPure, Category = "Card|Hand")
     int32 GetHandCount() const { return Hand.Num(); }
 
-    // ¼ÕÆĞ¿¡ ÇØ´ç Ä«µå°¡ ÀÖ´ÂÁö È®ÀÎ
+    // ì†íŒ¨ì— í•´ë‹¹ ì¹´ë“œê°€ ìˆëŠ”ì§€ í™•ì¸
     UFUNCTION(BlueprintPure, Category = "Card|Hand")
-    bool HasCardInHand(FName CardName) const { return Hand.Contains(CardName); }
+    bool HasCardInHand(int32 CardID) const { return Hand.Contains(CardID); }
 
 private:
-    // ¦¡¦¡ ³»ºÎ »óÅÂ ¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡
-    TArray<FName> DrawPile;
-    TArray<FName> Hand;
-    TArray<FName> DiscardPile;
+    // â”€â”€ ë‚´ë¶€ ë”ë¯¸ â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    TArray<int32> DrawPile;
+    TArray<int32> Hand;
+    TArray<int32> DiscardPile;
 
-    // DiscardPile -> DrawPile Àç¼øÈ¯ + ¼ÅÇÃ
+    // DiscardPile -> DrawPile ì¬ìˆœí™˜ + ì…”í”Œ
     void RecycleDiscardIntoDraw();
 
     void BroadcastHandChanged();

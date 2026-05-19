@@ -7,8 +7,8 @@
 
 /**
  * ECardRarity
- * Ä«µå Èñ±Íµµ µî±Ş.
- * DA_CardStyle ¿¡¼­ Èñ±Íµµº° ÀÌ¹ÌÁö¸¦ ±¸ºĞÇÏ´Â µ¥ »ç¿ë.
+ * ì¹´ë“œ í¬ê·€ë„ ì—´ê±°í˜•.
+ * DA_CardStyle ì—ì„œ í¬ê·€ë„ë³„ ì´ë¯¸ì§€ë¥¼ ê²°ì •í•˜ëŠ” ë° ì‚¬ìš©.
  */
 UENUM(BlueprintType)
 enum class ECardRarity : uint8
@@ -21,8 +21,8 @@ enum class ECardRarity : uint8
 
 /**
  * ECardType
- * Ä«µå Á¾·ù.
- * °ø°İ/¹æ¾î/½ºÅ³ µî Ä«µåÀÇ ¼º°İÀ» ±¸ºĞ.
+ * ì¹´ë“œ ì¢…ë¥˜.
+ * ê³µê²©/ë°©ì–´/ìŠ¤í‚¬ ë“± ì¹´ë“œì˜ í–‰ë™ì„ ë¶„ë¥˜.
  */
 UENUM(BlueprintType)
 enum class ECardType : uint8
@@ -37,8 +37,8 @@ enum class ECardType : uint8
 
 /**
  * EJobClass
- * Á÷¾÷ Á¾·ù.
- * Ä«µå°¡ ¾î¶² Á÷¾÷ Àü¿ëÀÎÁö, DA_CardStyle Á÷¾÷ ±¸ºĞ¿¡ »ç¿ë.
+ * ì§ì—… ë¶„ë¥˜.
+ * ì¹´ë“œê°€ ì–´ëŠ ì§ì—… ì „ìš©ì¸ì§€, DA_CardStyle í”„ë ˆì„ì— ì‚¬ìš©.
  */
 UENUM(BlueprintType)
 enum class EJobClass : uint8
@@ -51,134 +51,134 @@ enum class EJobClass : uint8
 
 /**
  * ETargetType
- * Ä«µå ´ë»ó Å¸ÀÔ.
- * ´ÜÀÏ Àû/ÀüÃ¼ Àû/ÀÚ½Å/¾Æ±º µî Ä«µå È¿°ú Àû¿ë ´ë»ó ±¸ºĞ.
+ * ì¹´ë“œ ëŒ€ìƒ íƒ€ì….
+ * ë‹¨ì¼ ì /ì „ì²´ ì /ìì‹ /ì•„êµ° ë“± ì¹´ë“œ íš¨ê³¼ ì ìš© ë²”ìœ„ ê²°ì •.
  */
 UENUM(BlueprintType)
 enum class ETargetType : uint8
 {
-    SingleEnemy UMETA(DisplayName = "SingleEnemy"),  // Àû ´ÜÀÏ ´ë»ó
-    AllEnemies  UMETA(DisplayName = "AllEnemies"),   // Àû ÀüÃ¼
-    Self        UMETA(DisplayName = "Self"),          // ÀÚ±â ÀÚ½Å
-    SingleAlly  UMETA(DisplayName = "SingleAlly"),   // ¾Æ±º ´ÜÀÏ ´ë»ó
-    AllAllies   UMETA(DisplayName = "AllAllies"),     // ¾Æ±º ÀüÃ¼
-    Single_Team UMETA(DisplayName = "Single_Team"),  // ÆÄÆ¼¿ø ´ÜÀÏ
+    SingleEnemy UMETA(DisplayName = "SingleEnemy"),  // ë‹¨ì¼ ì  ëŒ€ìƒ
+    AllEnemies  UMETA(DisplayName = "AllEnemies"),   // ì „ì²´ ì 
+    Self        UMETA(DisplayName = "Self"),          // ìê¸° ìì‹ 
+    SingleAlly  UMETA(DisplayName = "SingleAlly"),   // ì•„êµ° ë‹¨ì¼ ëŒ€ìƒ
+    AllAllies   UMETA(DisplayName = "AllAllies"),     // ì•„êµ° ì „ì²´
+    Single_Team UMETA(DisplayName = "Single_Team"),  // íŒŒí‹°ì› ì„ íƒ
 };
 
 /**
  * FCardDataRow
  *
- * DT_Cards DataTable ÀÇ Row Struct.
- * Ä«µå 1ÀåÀÇ ¸ğµç ½ºÆåÀ» ´ã´Â´Ù.
+ * DT_Cards DataTable ì˜ Row Struct.
+ * ì¹´ë“œ 1ì¥ì˜ ëª¨ë“  ë°ì´í„°ë¥¼ ë‹´ëŠ”ë‹¤.
  *
- * [¿¬µ¿]
+ * [ì°¸ê³ ]
  * - MainImage  : PaperSprite (pixelCardAssest_Sprite_XX)
- * - CardSubsystem ¿¡¼­ RowName(Ä«µå ID) À¸·Î Á¶È¸
- * - HandComponent ¿¡¼­ FName(Ä«µå ID) À¸·Î °ü¸®
- * - CardWidget ÀÇ SetCardData() ¿¡ Àü´ŞÇØ¼­ UI °»½Å
+ * - CardSubsystem ì—ì„œ _CardID ë¡œ ì¡°íšŒ
+ * - HandComponent ì—ì„œ int32(ì¹´ë“œ ID) ë¡œ ê´€ë¦¬
+ * - CardWidget ì˜ SetCardData() ì— ì „ë‹¬í•´ì„œ UI ê°±ì‹ 
  */
 USTRUCT(BlueprintType)
 struct FCardDataRow : public FTableRowBase
 {
     GENERATED_BODY()
 
-    // ¦¡¦¡ ½Äº° ¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡
+    // â”€â”€ ì¹´ë“œ ì‹ë³„ â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
-    // Ä«µå °íÀ¯ ¹øÈ£ (101, 201 µî)
+    // ì¹´ë“œ ê³ ìœ  ë²ˆí˜¸ (101, 201 ë“±)
     UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Card|Identity")
-    FName Name;
+    int32 _CardID;
 
-    // Ä«µå ÀÌ¸§ (Å¸°İ, ¼öºñ µî) - UI Ç¥½Ã¿ë
+    // ì¹´ë“œ ì´ë¦„ (íƒ€ì´í‹€, í‘œì‹œ ìš©) - UI í‘œì‹œìš©
     UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Card|Identity")
     FText CardName;
 
-    // Ä«µå ¼³¸í ÅØ½ºÆ® - UI Ç¥½Ã¿ë
+    // ì¹´ë“œ ì„¤ëª… í…ìŠ¤íŠ¸ - UI í‘œì‹œìš©
     UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Card|Identity")
     FText Description;
 
     /**
-     * Ä«µå ¸ŞÀÎ ÀÌ¹ÌÁö (PaperSprite).
-     * Ä«µå 1Àå¸¶´Ù ´Ù¸¥ ½ºÇÁ¶óÀÌÆ® ÁöÁ¤.
-     * DT_Cards ¿¡¼­ pixelCardAssest_Sprite_XX ¼±ÅÃ.
+     * ì¹´ë“œ ëŒ€í‘œ ì´ë¯¸ì§€ (PaperSprite).
+     * ì¹´ë“œ 1ì¥ë§ˆë‹¤ ë‹¤ë¥¸ ìŠ¤í”„ë¼ì´íŠ¸ ì‚¬ìš©.
+     * DT_Cards ì—ì„œ pixelCardAssest_Sprite_XX ì§€ì •.
      */
     UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Card|Identity")
     TSoftObjectPtr<UPaperSprite> MainImage;
 
-    // ¦¡¦¡ ºĞ·ù ¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡
+    // â”€â”€ ì¹´ë“œ ë¶„ë¥˜ â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
-    // Èñ±Íµµ (DA_CardStyle ÀÇ Èñ±Íµµº° ÀÌ¹ÌÁö ¼±ÅÃ¿¡ »ç¿ë)
+    // í¬ê·€ë„ (DA_CardStyle ì—ì„œ í¬ê·€ë„ë³„ ì´ë¯¸ì§€ í‘œì‹œì— ì‚¬ìš©)
     UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Card|Category")
     ECardRarity Rarity = ECardRarity::Normal;
 
-    // Ä«µå Å¸ÀÔ (°ø°İ/½ºÅ³ µî)
+    // ì¹´ë“œ íƒ€ì… (ê³µê²©/ìŠ¤í‚¬ ë“±)
     UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Card|Category")
     ECardType CardType = ECardType::Attack;
 
-    // »ç¿ë °¡´É Á÷¾÷ (Any ¸é Àü Á÷¾÷ »ç¿ë °¡´É)
+    // ì‚¬ìš© ê°€ëŠ¥ ì§ì—… ì œí•œ (Any ë©´ ëª¨ë“  ì§ì—… ì‚¬ìš© ê°€ëŠ¥)
     UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Card|Category")
     EJobClass RequiredClass = EJobClass::Any;
 
-    // ¦¡¦¡ ÄÚ½ºÆ® ¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡
+    // â”€â”€ ì¹´ë“œ ì½”ìŠ¤íŠ¸ â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
-    // Ä«µå »ç¿ë ÄÚ½ºÆ® (ÆÄÆ¼ °ø¿ë ÄÚ½ºÆ®¿¡¼­ Â÷°¨)
+    // ì¹´ë“œ ì‚¬ìš© ì½”ìŠ¤íŠ¸ (ì—ë„ˆì§€ ì†Œëª¨ ì½”ìŠ¤íŠ¸ë¡œ ì‚¬ìš©)
     UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Card|Cost",
         meta = (ClampMin = "0", ClampMax = "10"))
     int32 Cost = 1;
 
-    // ¦¡¦¡ È¿°ú ¼öÄ¡ ¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡
+    // â”€â”€ íš¨ê³¼ ìˆ˜ì¹˜ â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
-    // ÇÇÇØ·®
+    // ê³µê²©ë ¥
     UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Card|Effect",
         meta = (ClampMin = "0"))
     int32 Damage = 0;
 
-    // ¹æ¾îµµ
+    // ë°©ì–´
     UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Card|Effect",
         meta = (ClampMin = "0"))
     int32 Block = 0;
 
-    // µå·Î¿ì ¼ö
+    // ë“œë¡œìš° ìˆ˜
     UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Card|Effect",
         meta = (ClampMin = "0"))
     int32 DrawCount = 0;
 
-    // »ç¿ë È½¼ö (1 = 1È¸, 2 = 2È¸ »ç¿ë)
+    // ì‚¬ìš© íšŸìˆ˜ (1 = 1íšŒ, 2 = 2íšŒ ë“±)
     UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Card|Effect",
         meta = (ClampMin = "1"))
     int32 UsingCount = 1;
 
-    // È¸º¹·®
+    // íšŒë³µëŸ‰
     UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Card|Effect",
         meta = (ClampMin = "0"))
     int32 HealAmount = 0;
 
-    // ¦¡¦¡ Æ¯¼ö È¿°ú ¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡
+    // â”€â”€ ì¹´ë“œ íŠ¹ìˆ˜ íš¨ê³¼ â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
-    // Æ¯¼ö È¿°ú ÅÂ±× (¹öÇÁ/µğ¹öÇÁ ID µî)
+    // íŠ¹ìˆ˜ íš¨ê³¼ íƒœê·¸ (ë²„í”„/ë””ë²„í”„ ID ë“±)
     UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Card|Effect")
     FName EffectTag;
 
-    // Æ¯¼ö È¿°ú ¼öÄ¡
+    // íŠ¹ìˆ˜ íš¨ê³¼ ìˆ˜ì¹˜
     UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Card|Effect",
         meta = (ClampMin = "0"))
     int32 EffectValue = 0;
 
-    // ¦¡¦¡ ´ë»ó ¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡
+    // â”€â”€ ëŒ€ìƒ ë²”ìœ„ â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
-    // Ä«µå È¿°ú Àû¿ë ´ë»ó
+    // ì¹´ë“œ íš¨ê³¼ ì ìš© ë²”ìœ„
     UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Card|Target")
     ETargetType TargetType = ETargetType::SingleEnemy;
 
-    // ¦¡¦¡ ¹ë·±½º ¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡
+    // â”€â”€ ì¹´ë“œ ë°¸ëŸ°ìŠ¤ â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
-    // Ä«µå ¹ë·±½º Á¡¼ö (±âÈ¹ Âü°í¿ë)
+    // ì¹´ë“œ ë°¸ëŸ°ìŠ¤ ì ìˆ˜ (ê¸°íš ì°¸ê³ ìš©)
     UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Card|Balance",
         meta = (ClampMin = "0"))
     int32 ScoreValue = 0;
 
-    // ¦¡¦¡ ¸ŞÅ¸ ¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡
+    // â”€â”€ ê¸°íš ë©”íƒ€ â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
-    // ±âÈ¹ ¸Ş¸ğ (·±Å¸ÀÓ ¹Ì»ç¿ë)
+    // ê¸°íš ë©”ëª¨ (ë””ìì´ë„ˆ ì´ìƒìš©)
     UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Card|Meta")
     FString Notes;
 };
