@@ -1,8 +1,8 @@
-#include "Map/AreaClearUiData.h"
+﻿#include "Map/AreaClearUiData.h"
 
-#include "Map/RunAreaClearWidget.h"
+#include "Reward/BattleClearWidget.h"
 
-TSubclassOf<URunAreaClearWidget> UAreaClearUiData::GetAreaClearWidgetClass(EAreaType AreaType) const
+TSubclassOf<UBattleClearWidget> UAreaClearUiData::GetAreaClearWidgetClass(EAreaType AreaType) const
 {
 	switch (AreaType)
 	{
@@ -24,3 +24,4 @@ TSubclassOf<URunAreaClearWidget> UAreaClearUiData::GetAreaClearWidgetClass(EArea
 		return nullptr;
 	}
 }
+

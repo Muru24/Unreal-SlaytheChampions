@@ -1,11 +1,11 @@
-#pragma once
+Ôªø#pragma once
 
 #include "CoreMinimal.h"
 #include "Engine/DataAsset.h"
 #include "Map/MapEnum.h"
 #include "AreaClearUiData.generated.h"
 
-class URunAreaClearWidget;
+class UBattleClearWidget;
 
 UCLASS(BlueprintType)
 class SLAYTHECHAMPIONS_API UAreaClearUiData : public UDataAsset
@@ -14,23 +14,24 @@ class SLAYTHECHAMPIONS_API UAreaClearUiData : public UDataAsset
 
 public:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "AreaClearUi")
-	TSubclassOf<URunAreaClearWidget> BattleAreaClearWidget;
+	TSubclassOf<UBattleClearWidget> BattleAreaClearWidget;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "AreaClearUi")
-	TSubclassOf<URunAreaClearWidget> EventAreaClearWidget;
+	TSubclassOf<UBattleClearWidget> EventAreaClearWidget;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "AreaClearUi")
-	TSubclassOf<URunAreaClearWidget> RestAreaClearWidget;
+	TSubclassOf<UBattleClearWidget> RestAreaClearWidget;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "AreaClearUi")
-	TSubclassOf<URunAreaClearWidget> ShopAreaClearWidget;
+	TSubclassOf<UBattleClearWidget> ShopAreaClearWidget;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "AreaClearUi")
-	TSubclassOf<URunAreaClearWidget> RewardAreaClearWidget;
+	TSubclassOf<UBattleClearWidget> RewardAreaClearWidget;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "AreaClearUi")
-	TSubclassOf<URunAreaClearWidget> ArtifactEventAreaClearWidget;
+	TSubclassOf<UBattleClearWidget> ArtifactEventAreaClearWidget;
 
-	/* Area ≈∏¿‘ø° µ˚∏• ≈¨∏ÆæÓ ¿ß¡¨ ≈¨∑°Ω∫ π›»Ø */
-	TSubclassOf<URunAreaClearWidget> GetAreaClearWidgetClass(EAreaType AreaType) const;
+	/* Area ÌÉÄÏûÖÏóê Îî∞Î•∏ ÌÅ¥Î¶¨Ïñ¥ ÏúÑÏ†Ø ÌÅ¥ÎûòÏä§ Î∞òÌôò */
+	TSubclassOf<UBattleClearWidget> GetAreaClearWidgetClass(EAreaType AreaType) const;
 };
+

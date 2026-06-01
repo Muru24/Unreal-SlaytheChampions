@@ -17,6 +17,8 @@ void UMouseManager::SetupMouseCursor(APlayerController* PC, TSubclassOf<UUserWid
     CurrentCursorWidget = CreateWidget<UUserWidget>(PC, CursorWidgetClass);
     if (CurrentCursorWidget)
     {
+        PC->DefaultMouseCursor = EMouseCursor::Default;
+        PC->CurrentMouseCursor = EMouseCursor::Default;
         PC->SetMouseCursorWidget(EMouseCursor::Default, CurrentCursorWidget);
     }
 
@@ -28,11 +30,14 @@ void UMouseManager::SetMouseVisibility(APlayerController* PC, bool bShow)
     if (!PC) return;
 
     PC->bShowMouseCursor = bShow;
+    PC->bEnableClickEvents = bShow;
+    PC->bEnableMouseOverEvents = bShow;
 
     if (bShow)
     {
         FInputModeGameAndUI InputMode;
         InputMode.SetLockMouseToViewportBehavior(EMouseLockMode::DoNotLock);
+        InputMode.SetHideCursorDuringCapture(false);
         PC->SetInputMode(InputMode);
     }
     else

@@ -136,4 +136,7 @@ public:
      */
     UFUNCTION(BlueprintPure, Category = "Save")
     static TArray<FName> GetDeckCards(int32 PawnIndex);
+
+    UFUNCTION(BlueprintPure, Category = "Save")
+    static EJobClass GetJobClass(int32 PawnIndex);
 };

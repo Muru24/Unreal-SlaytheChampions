@@ -48,4 +48,7 @@ public:
 	int32 GetMapWidth() const;
 
 	int32 GetMapHeight() const;
+
+	UFUNCTION(BlueprintCallable)
+	URunSystem* GetRunSystem() const { return RunSystem; }
 };

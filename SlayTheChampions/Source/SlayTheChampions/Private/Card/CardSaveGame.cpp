@@ -144,3 +144,14 @@ TArray<FName> UCardSaveGame::GetDeckCards(int32 PawnIndex)
 
     return Save->PartyDecks[PawnIndex].DeckCards;
 }
+
+EJobClass UCardSaveGame::GetJobClass(int32 PawnIndex)
+{
+    UCardSaveGame* Save = LoadSave();
+    if (!Save || !Save->PartyDecks.IsValidIndex(PawnIndex))
+    {
+        return EJobClass::Any;
+    }
+
+    return Save->PartyDecks[PawnIndex].JobClass;
+}

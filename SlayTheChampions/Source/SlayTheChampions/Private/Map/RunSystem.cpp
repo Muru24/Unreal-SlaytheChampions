@@ -1,11 +1,11 @@
-// Fill out your copyright notice in the Description page of Project Settings.
+﻿// Fill out your copyright notice in the Description page of Project Settings.
 
 #include "Map/RunSystem.h"
 
 #include "GameManagers/LevelManager.h"
 #include "Map/Area.h"
 #include "Map/MapManager.h"
-#include "Map/RewardSystem.h"
+#include "Reward/RewardSystem.h"
 #include "Save/STCGameInstance.h"
 
 void URunSystem::Initialize(FSubsystemCollectionBase& Collection)
@@ -320,3 +320,4 @@ void URunSystem::BroadcastRoomTypeEvent(const FAreaInfo& RoomInfo){
 		break;
 	}
 }
+

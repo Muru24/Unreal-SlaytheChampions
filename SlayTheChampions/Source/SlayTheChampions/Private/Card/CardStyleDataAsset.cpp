@@ -18,4 +18,4 @@ UPaperSprite* UCardStyleDataAsset::GetTypeBackground(ECardRarity Rarity) const
     case ECardRarity::Legendary: return TypeBackground_Legendary.LoadSynchronous();
     default:                     return TypeBackground_Normal.LoadSynchronous();
     }
-}//test1
+}//test

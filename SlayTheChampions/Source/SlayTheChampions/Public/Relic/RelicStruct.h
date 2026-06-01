@@ -1,10 +1,10 @@
-// Fill out your copyright notice in the Description page of Project Settings.
-
 #pragma once
 
 #include "CoreMinimal.h"
+#include "Engine/DataTable.h"
 #include "Card/CardDataTypes.h"
 #include "CombatKernel/EffectTypes.h"
+#include "Effect/EffectStruct.h"
 #include "RelicStruct.generated.h"
 
 UENUM(BlueprintType)
@@ -32,7 +32,7 @@ enum class ERelicSourceType : uint8
 };
 
 UENUM(BlueprintType)
-/*유물 희귀도*/
+/* 유물 희귀도 */
 enum class ERelicRarity : uint8
 {
 	Normal = 0 UMETA(DisplayName = "Normal"),
@@ -41,25 +41,8 @@ enum class ERelicRarity : uint8
 	None = 99 UMETA(DisplayName = "None"),
 };
 
-UENUM(BlueprintType)
-/*유물 발동 조건*/
-enum class ERelicTriggerCondition : uint8
-{
-	None = 0 UMETA(DisplayName = "None"),
-	TurnCountReached = 1 UMETA(DisplayName = "Turn Count Reached"),
-	StackCountReached = 2 UMETA(DisplayName = "Stack Count Reached"),
-};
-
-UENUM(BlueprintType)
-/*유물 발동 방식*/
-enum class ERelicTriggerUsageType : uint8
-{
-	OneShot = 0 UMETA(DisplayName = "One Shot"),
-	Repeat = 1 UMETA(DisplayName = "Repeat"),
-};
-
 USTRUCT(BlueprintType)
-/*유물 기본 정보 구조체*/
+/* 유물 기본 정보 CSV 행 */
 struct FRelicDataRow : public FTableRowBase
 {
 	GENERATED_BODY()
@@ -83,68 +66,11 @@ struct FRelicDataRow : public FTableRowBase
 	ETargetType TargetScope = ETargetType::Self;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
-	EEffectiveDate EffectiveDate = EEffectiveDate::None;
+	EEffectApplyTiming ApplyTiming = EEffectApplyTiming::None;
 };
 
 USTRUCT(BlueprintType)
-/*유물 효과 정보 구조체*/
-struct FRelicEffectRow : public FTableRowBase
-{
-	GENERATED_BODY()
-
-	UPROPERTY(EditAnywhere, BlueprintReadOnly)
-	FName RelicID;
-
-	UPROPERTY(EditAnywhere, BlueprintReadOnly)
-	int32 Order = 0;
-
-	UPROPERTY(EditAnywhere, BlueprintReadOnly)
-	EEffectType BuffType = EEffectType::None;
-
-	UPROPERTY(EditAnywhere, BlueprintReadOnly)
-	int32 Value = 0;
-
-	UPROPERTY(EditAnywhere, BlueprintReadOnly)
-	EEffectiveDate EffectiveDate = EEffectiveDate::None;
-
-	UPROPERTY(EditAnywhere, BlueprintReadOnly)
-	ERelicTriggerCondition TriggerCondition = ERelicTriggerCondition::None;
-
-	UPROPERTY(EditAnywhere, BlueprintReadOnly)
-	int32 TriggerValue = 0;
-
-	UPROPERTY(EditAnywhere, BlueprintReadOnly)
-	ERelicTriggerUsageType TriggerUsageType = ERelicTriggerUsageType::OneShot;
-};
-
-USTRUCT(BlueprintType)
-struct FRelicEffectData
-{
-	GENERATED_BODY()
-
-	UPROPERTY(EditAnywhere, BlueprintReadOnly)
-	int32 Order = 0;
-
-	UPROPERTY(EditAnywhere, BlueprintReadOnly)
-	EEffectType BuffType = EEffectType::None;
-
-	UPROPERTY(EditAnywhere, BlueprintReadOnly)
-	int32 Value = 0;
-
-	UPROPERTY(EditAnywhere, BlueprintReadOnly)
-	EEffectiveDate EffectiveDate = EEffectiveDate::None;
-
-	UPROPERTY(EditAnywhere, BlueprintReadOnly)
-	ERelicTriggerCondition TriggerCondition = ERelicTriggerCondition::None;
-
-	UPROPERTY(EditAnywhere, BlueprintReadOnly)
-	int32 TriggerValue = 0;
-
-	UPROPERTY(EditAnywhere, BlueprintReadOnly)
-	ERelicTriggerUsageType TriggerUsageType = ERelicTriggerUsageType::OneShot;
-};
-
-USTRUCT(BlueprintType)
+/* 런타임에서 사용하는 유물 데이터 */
 struct FRelic
 {
 	GENERATED_BODY()
@@ -168,8 +94,8 @@ struct FRelic
 	ETargetType TargetScope = ETargetType::Self;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
-	EEffectiveDate EffectiveDate = EEffectiveDate::None;
+	EEffectApplyTiming ApplyTiming = EEffectApplyTiming::None;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
-	TArray<FRelicEffectData> Effects;
+	TArray<FSourceEffectData> Effects;
 };

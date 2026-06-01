@@ -1,27 +1,18 @@
-,RelicID,RelicName,Description,Rarity,RelicSourceType,TargetScope,EffectiveDate
-01,BurningBlood,불타는 혈액,"매 전투 종료 시, 체력을 6 회복합니다. (아이언클래드)",Legendary,Default,Self,OnBattleEnd
-02,RingOfTheSnake,뱀의 반지,"매 전투 시작 시, 카드를 추가로 2장 뽑습니다. (사일런트)",Legendary,Default,Self,OnBattleStart
-03,DivineRight,신성한 빛,"매 전투 시작 시, 에너지를 얻습니다. (리젠트)",Legendary,Default,Self,OnBattleStart
-04,BoundPhylactery,구속된 성물함,"내 턴 시작 시, 소환 1. (네크로바인더)",Legendary,Default,Self,DuringBattle
-05,CrackedCore,부서진 핵,"매 전투 시작 시, 전기를 1번 영창합니다. (디펙트)",Legendary,Default,Self,OnBattleStart
-06,BlackBlood,어두운 피,"매 전투 종료 시, 체력을 12 회복합니다. 불타는 혈액을 대체합니다.",Legendary,Default,Self,OnBattleEnd
-07,RingOfTheDrake,비룡의 반지,"첫 3 턴 시작 시, 카드를 추가로 2장 뽑습니다. 뱀의 반지를 대체합니다.",Legendary,Default,Self,DuringBattle
-08,Vajra,금강저,매 전투 시작 시 힘을 1 얻습니다.,Normal,Common,Self,OnBattleStart
-09,OddlySmoothStone,기묘하게 매끄러운 돌,매 전투 시작 시 민첩을 1 얻습니다.,Normal,Common,Self,OnBattleStart
-10,Anchor,닻,첫 번째 턴 시작 시 방어도를 10 얻습니다.,Normal,Common,Self,DuringBattle
-11,Strawberry,딸기,획득 시 최대 체력이 7 증가하고 체력을 7 회복합니다.,Normal,Common,Self,OnAcquire
-12,Lantern,랜턴,첫 번째 턴 시작 시 에너지를 1 얻습니다.,Normal,Common,Self,DuringBattle
-13,CentennialPuzzle,백년 퍼즐,매 전투마다 처음으로 체력을 잃을 때 카드를 3장 뽑습니다.,Normal,Common,Self,DuringBattle
-14,Whetstone,숫돌,획득 시 무작위 공격 카드 2장을 강화합니다.,Normal,Common,Self,OnAcquire
-15,MealTicket,식권,상점에 진입할 때마다 체력을 15 회복합니다.,Normal,Common,Self,InShop
-16,BagOfPreparation,준비된 가방,매 전투 시작 시 카드를 추가로 2장 뽑습니다.,Normal,Common,Self,OnBattleStart
-17,BronzeScales,청동 비늘,매 전투 시작 시 가시를 3 얻습니다.,Normal,Common,Self,OnBattleStart
-18,HappyFlower,행복한 꽃,3턴마다 에너지를 1 얻습니다.,Normal,Common,Self,DuringBattle
-19,RedSkull,붉은 해골,체력이 50% 이하일 때 힘을 3 얻습니다. (아이언클래드),Normal,Common,Self,DuringBattle
-20,SneckoSkull,스네코의 해골,적에게 독을 부여할 때마다 독을 1 추가로 부여합니다. (사일런트),Normal,Common,SingleEnemy,DuringBattle
-21,BagOfMarbles,구슬 주머니,"매 전투 시작 시, 모든 적에게 취약을 1 부여합니다.",Rare,Common,AllEnemies,OnBattleStart
-22,GremlinHorn,그렘린 뿔,적을 처치할 때마다 에너지를 1 얻고 카드를 1장 뽑습니다.,Rare,Common,Self,DuringBattle
-23,Pear,배,획득 시 최대 체력이 10 증가하고 체력을 10 회복합니다.,Rare,Common,Self,OnAcquire
-24,RedMask,붉은 가면,"매 전투 시작 시, 모든 적에게 취약을 1 부여합니다.",Rare,Common,AllEnemies,OnBattleStart
-25,PaperKrane,종이 학,취약 상태인 적이 주는 피해가 25% 대신 40% 감소합니다.,Rare,Common,SingleEnemy,DuringBattle
-26,PaperPharez,종이 검,취약 상태인 적에게 주는 피해가 50% 대신 75% 증가합니다.,Rare,Common,SingleEnemy,DuringBattle
+﻿,RelicID,RelicName,Description,Rarity,RelicSourceType,TargetScope,ApplyTiming
+01,1001,화염 용의 비늘,"공격을 받아 방어도가 깨질 때마다, 공격한 적에게 가시 피해를 3 줍니다.",Normal,Common,Self,DuringBattle
+02,1002,화강암 용의 알,"매 전투 시작 시, 내 덱에 있는 모든 수비 카드에 기민함 1을 인챈트합니다.",Rare,Common,Self,DuringBattle
+03,1003,수정 용의 머리,"매 전투에서 내가 처음으로 사용하는 '비용이 2 이상인 카드'는 비용이 0이 되며, 사용 후 내 손패로 다시 되돌아옵니다.",Legendary,Event,Self,OnBattleStart
+04,1004,이상한 체스판,"매 전투 시작 시, 내 손에 있는 카드중 한장을 사용합니다.",Normal,Event,Self,OnBattleStart
+05,1005,종이 비행기,"카드를 소멸시킬시 적 전체 2 피해를 줍니다.",Normal,Event,Self,DuringBattle
+06,1006,전쟁 여신의 조각상,"엘리트 전투를 2회 승리시마다 힘 1이 증가합니다.",Rare,Common,Self,OnBattleStart
+07,1007,어둠의 썬구리,"상점에 있는 판매목록들이 랜덤하게 가격이 증가하거나 감소합니다.",Rare,Shop,Self,InShop
+08,1008,도살자의 녹슨 톱날,"매 턴마다 처음 피해를 입힐시 대상에게 출혈 2를 부여합니다.",Legendary,Event,AllEnemies,DuringBattle
+09,1009,에란겔에 붉은 신호,"획득시 전설 카드 보상을 1회 획득합니다.",Rare,Event,Self,OnAcquire
+10,1010,황금 글라디우스,"전투 종료시 받는 골드가 30% 증가합니다.",Normal,Common,Self,OnBattleEnd
+11,1011,갓 구운 프레첼,"획득시 최대체력이 8 증가합니다.",Normal,Common,Self,OnAcquire
+12,1012,썩은 과일,"전투 시작시 모든 적에게 약화 1을 부여합니다.",Normal,Common,AllEnemies,OnBattleStart
+13,1013,부서진 검날,"매 턴 처음사용하는 공격카드에 피해량이 1 증가합니다.",Legendary,Default,Self,DuringBattle
+14,1014,신용카드,"상점에 있는 아이템을 1번만 무료 구매가 가능해집니다.",Rare,Shop,Self,InShop
+15,1015,매직완드,"매 턴 시작시 무작위 속성이 부여됩니다.",Legendary,Default,Self,DuringBattle
+16,1016,랜덤 주사위,"매 턴 시작시 손패중 무작위 카드의 비용이 변화됩니다.",Rare,Event,Self,DuringBattle
+17,1017,손도장 찍힌 바위,"매 턴 시작시 무작위 적에게 약화 1 또는 취약 1을 부여합니다.",Normal,Shop,SingleEnemy,DuringBattle

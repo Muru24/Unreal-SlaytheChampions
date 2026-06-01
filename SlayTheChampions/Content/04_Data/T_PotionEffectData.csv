@@ -1,0 +1,11 @@
+﻿,SourceID,Order,EffectType,Value,TargetScope,ApplyTiming,TriggerCondition,TriggerValue,TriggerUsageType,SelectionGroup,SelectionMode
+2001,2001,0,Damage,20,SingleEnemy,OnUse,None,0,OneShot,None,All
+2002,2002,0,Shield,12,Self,OnUse,None,0,OneShot,None,All
+2003,2003,0,GainEnergy,2,Self,OnUse,None,0,OneShot,None,All
+2004,2004,0,DrawCard,3,Self,OnUse,None,0,OneShot,None,All
+2005,2005,0,Heal,15,SingleAlly,OnUse,None,0,OneShot,None,All
+2006,2006,0,Buff_AttackUp,2,Self,OnUse,None,0,OneShot,None,All
+2007,2007,0,Debuff_Weak,2,SingleEnemy,OnUse,None,0,OneShot,None,All
+2008,2008,0,Debuff_Vulnerable,2,SingleEnemy,OnUse,None,0,OneShot,None,All
+2009,2009,0,Heal,30,Self,OnDeath,None,0,OneShot,None,All
+2010,2010,0,CreateRandomPotion,0,Self,OnUse,None,0,OneShot,None,All

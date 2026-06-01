@@ -27,20 +27,23 @@ void URelicSubsystem::Initialize(FSubsystemCollectionBase& Collection)
 	RebuildRelicCache();
 }
 
-FRelicEffectData URelicSubsystem::MakeRelicEffectData(const FRelicEffectRow& EffectRow)
+FSourceEffectData URelicSubsystem::MakeRelicEffectData(const FSourceEffectRow& EffectRow)
 {
-	FRelicEffectData EffectData;
+	FSourceEffectData EffectData;
 	EffectData.Order = EffectRow.Order;
-	EffectData.BuffType = EffectRow.BuffType;
+	EffectData.EffectType = EffectRow.EffectType;
 	EffectData.Value = EffectRow.Value;
-	EffectData.EffectiveDate = EffectRow.EffectiveDate;
+	EffectData.TargetScope = EffectRow.TargetScope;
+	EffectData.ApplyTiming = EffectRow.ApplyTiming;
 	EffectData.TriggerCondition = EffectRow.TriggerCondition;
 	EffectData.TriggerValue = EffectRow.TriggerValue;
 	EffectData.TriggerUsageType = EffectRow.TriggerUsageType;
+	EffectData.SelectionGroup = EffectRow.SelectionGroup;
+	EffectData.SelectionMode = EffectRow.SelectionMode;
 	return EffectData;
 }
 
-void URelicSubsystem::FillRelicRuntimeData(const FRelicDataRow& RelicRow, TArray<FRelicEffectData>&& Effects, FRelic& OutRelicData)
+void URelicSubsystem::FillRelicRuntimeData(const FRelicDataRow& RelicRow, TArray<FSourceEffectData>&& Effects, FRelic& OutRelicData)
 {
 	OutRelicData.RelicID = RelicRow.RelicID;
 	OutRelicData.RelicName = RelicRow.RelicName;
@@ -48,7 +51,7 @@ void URelicSubsystem::FillRelicRuntimeData(const FRelicDataRow& RelicRow, TArray
 	OutRelicData.Rarity = RelicRow.Rarity;
 	OutRelicData.RelicSourceType = RelicRow.RelicSourceType;
 	OutRelicData.TargetScope = RelicRow.TargetScope;
-	OutRelicData.EffectiveDate = RelicRow.EffectiveDate;
+	OutRelicData.ApplyTiming = RelicRow.ApplyTiming;
 	OutRelicData.Effects = MoveTemp(Effects);
 }
 
@@ -68,9 +71,77 @@ TArray<FRelic> URelicSubsystem::GetCachedRelics() const
 	return Relics;
 }
 
+FRelic URelicSubsystem::GetRelics(FName _RelicId)
+{
+	const FRelic* FoundRelic = Relics.FindByPredicate([_RelicId](const FRelic& Relic)
+		{
+			return Relic.RelicID == _RelicId;
+		});
+
+	return (FoundRelic != nullptr) ? *FoundRelic : FRelic();
+}
+
+FName URelicSubsystem::GetRandomShopRelic()
+{
+	if (ShopRelics.IsEmpty())
+	{
+		return NAME_None;
+	}
+
+	const int32 Index = FMath::RandRange(0, ShopRelics.Num() - 1);
+	return ShopRelics[Index].RelicID;
+}
+
+FName URelicSubsystem::GetRandomCommonRelic()
+{
+	if (CommonRelics.IsEmpty())
+	{
+		return NAME_None;
+	}
+	
+	const int32 Index = FMath::RandRange(0, CommonRelics.Num() - 1);
+	return CommonRelics[Index].RelicID;
+}
+
+FName URelicSubsystem::GetRandomShopAvailableRelic()
+{
+	TArray<FRelic> AvailableRelics;
+	AvailableRelics.Append(ShopRelics);
+	AvailableRelics.Append(CommonRelics);
+
+	if (AvailableRelics.IsEmpty())
+	{
+		return NAME_None;
+	}
+
+	const int32 Index = FMath::RandRange(0, AvailableRelics.Num() - 1);
+	return AvailableRelics[Index].RelicID;
+}
+
+TArray<FRelic> URelicSubsystem::GetCachedRelicsBySource(ERelicSourceType InSourceType) const
+{
+	switch (InSourceType)
+	{
+	case ERelicSourceType::Default:
+		return DefaultRelics;
+	case ERelicSourceType::Shop:
+		return ShopRelics;
+	case ERelicSourceType::Event:
+		return EventRelics;
+	case ERelicSourceType::Common:
+		return CommonRelics;
+	default:
+		return TArray<FRelic>();
+	}
+}
+
 void URelicSubsystem::RebuildRelicCache()
 {
 	Relics.Reset();
+	DefaultRelics.Reset();
+	ShopRelics.Reset();
+	EventRelics.Reset();
+	CommonRelics.Reset();
 	Map_Relics.Reset();
 
 	if (!RelicInfoTable || !RelicEffectsTable)
@@ -86,11 +157,11 @@ void URelicSubsystem::RebuildRelicCache()
 			continue;
 		}
 
-		TArray<FRelicEffectData> Effects;
+		TArray<FSourceEffectData> Effects;
 		for (const FName& EffectRowName : RelicEffectsTable->GetRowNames())
 		{
-			const FRelicEffectRow* EffectRow = RelicEffectsTable->FindRow<FRelicEffectRow>(EffectRowName, TEXT("URelicSubsystem::RebuildRelicCache"));
-			if (!EffectRow || EffectRow->RelicID != RelicRow->RelicID)
+			const FSourceEffectRow* EffectRow = RelicEffectsTable->FindRow<FSourceEffectRow>(EffectRowName, TEXT("URelicSubsystem::RebuildRelicCache"));
+			if (!EffectRow || EffectRow->SourceID != RelicRow->RelicID)
 			{
 				continue;
 			}
@@ -98,7 +169,7 @@ void URelicSubsystem::RebuildRelicCache()
 			Effects.Add(MakeRelicEffectData(*EffectRow));
 		}
 
-		Effects.Sort([](const FRelicEffectData& A, const FRelicEffectData& B)
+		Effects.Sort([](const FSourceEffectData& A, const FSourceEffectData& B)
 		{
 			return A.Order < B.Order;
 		});
@@ -107,6 +178,28 @@ void URelicSubsystem::RebuildRelicCache()
 		FillRelicRuntimeData(*RelicRow, MoveTemp(Effects), RuntimeData);
 		Map_Relics.Add(RelicRow->RelicID, RuntimeData);
 		Relics.Add(RuntimeData);
+		AddRelicToSourceCache(RuntimeData);
+	}
+}
+
+void URelicSubsystem::AddRelicToSourceCache(const FRelic& InRelicData)
+{
+	switch (InRelicData.RelicSourceType)
+	{
+	case ERelicSourceType::Default:
+		DefaultRelics.Add(InRelicData);
+		break;
+	case ERelicSourceType::Shop:
+		ShopRelics.Add(InRelicData);
+		break;
+	case ERelicSourceType::Event:
+		EventRelics.Add(InRelicData);
+		break;
+	case ERelicSourceType::Common:
+		CommonRelics.Add(InRelicData);
+		break;
+	default:
+		break;
 	}
 }
 

@@ -1,0 +1,11 @@
+﻿,PotionID,PotionName,Description,Rarity,PotionSourceType,UseTiming,TargetScope
+2001,2001,화염 포션,선택한 적에게 피해를 줍니다.,Common,Common,DuringBattle,SingleEnemy
+2002,2002,방어 포션,이번 전투 동안 방어도를 얻습니다.,Common,Common,DuringBattle,Self
+2003,2003,에너지 포션,이번 턴에 파티 에너지를 얻습니다.,Common,Common,DuringBattle,Self
+2004,2004,드로우 포션,카드를 뽑습니다.,Common,Common,DuringBattle,Self
+2005,2005,회복 포션,선택한 아군의 체력을 회복합니다.,Uncommon,Common,DuringBattle,SingleAlly
+2006,2006,힘 포션,이번 전투 동안 공격력이 증가합니다.,Uncommon,Common,DuringBattle,Self
+2007,2007,약화 포션,선택한 적에게 약화를 부여합니다.,Uncommon,Common,DuringBattle,SingleEnemy
+2008,2008,취약 포션,선택한 적에게 취약을 부여합니다.,Uncommon,Common,DuringBattle,SingleEnemy
+2009,2009,요정의 병,체력이 0이 되면 이 포션을 소모하고 체력을 회복합니다.,Rare,Common,OnDeath,Self
+2010,2010,혼돈의 양조주,빈 포션 슬롯을 무작위 포션으로 채웁니다.,Rare,Event,OnUse,Self
