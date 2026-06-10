@@ -29,6 +29,14 @@ public:
 	UFUNCTION(BlueprintPure)
 	int32 GetPartyMemberCount() const { return PartyInfo.Champions.Num(); }
 
+	// 배틀 레벨 진입 시 플레이어 액터가 자신을 등록. BP_TestPlayer 등 BeginPlay에서 호출
+	UFUNCTION(BlueprintCallable)
+	void RegisterChampion(AUnit* Unit) { if (Unit) PartyInfo.Champions.AddUnique(Unit); }
+
+	// 레벨 전환 전 Champions 초기화 (이전 레벨 액터 참조 제거)
+	UFUNCTION(BlueprintCallable)
+	void ClearChampions() { PartyInfo.Champions.Empty(); }
+
 	/*파티 초기화*/
 	UFUNCTION(BlueprintCallable)
 	void InitParty();

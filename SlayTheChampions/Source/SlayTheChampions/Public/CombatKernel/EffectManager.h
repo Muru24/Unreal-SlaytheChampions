@@ -42,5 +42,15 @@ public:
 	static void TickEffects(AUnit* Unit);
 
 	// 데미지 파이프라인: 공격자 버프/디버프 → 대상 Vulnerable → Shield 흡수 → HP 감소
-	static void ProcessDamage(AUnit* Target, int32 Damage, AUnit* Attacker);
+	// bIsAttack=false면 도트(Burn 등)로 간주 — 피격 트리거(Bleed)를 발동하지 않는다
+	static void ProcessDamage(AUnit* Target, int32 Damage, AUnit* Attacker, bool bIsAttack = true);
+
+	// ── 표시용 계산 (카드 UI가 실제 파이프라인과 같은 값을 보이도록 공용 사용) ──
+	// 공격자 측 데미지 보정: + AttackUp, Weak면 ×0.75 (대상 Vulnerable은 타겟 의존이라 제외)
+	UFUNCTION(BlueprintPure, Category = "Effect")
+	static int32 ModifyOutgoingDamage(AUnit* Attacker, int32 BaseDamage);
+
+	// 방어도 획득 보정: + DefenseUp, Frail이면 ×0.75
+	UFUNCTION(BlueprintPure, Category = "Effect")
+	static int32 ModifyBlockGain(AUnit* Owner, int32 BaseBlock);
 };

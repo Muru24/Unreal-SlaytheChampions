@@ -172,7 +172,8 @@ bool UCardUserComponent::PlayCard(FName CardName)
             DeckComponent->DiscardCard(CardName);
     }
 
-    // CombatManager 의 ActionQueue 에 카드 등록 → PlayerExecutionPhase 에서 실제 효과 실행
+    // CombatManager 의 ActionQueue(히스토리)에 카드 등록 — 효과 실행은 포함되지 않음
+    // (실제 효과 실행은 BattleMainWidget::QueueCardAction → ExecuteCard 에서 즉시 처리)
     ACombatManager* CombatMgr = Cast<ACombatManager>(
         UGameplayStatics::GetActorOfClass(GetWorld(), ACombatManager::StaticClass()));
     if (CombatMgr)

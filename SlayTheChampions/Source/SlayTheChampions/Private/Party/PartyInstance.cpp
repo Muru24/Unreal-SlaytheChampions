@@ -1,5 +1,7 @@
 ﻿#include "Party/PartyInstance.h"
 
+#include "Relic/RelicSubsystem.h"
+
 void UPartyInstance::Initialize(FSubsystemCollectionBase& Collection)
 {
 	Super::Initialize(Collection);
@@ -55,6 +57,11 @@ void UPartyInstance::AddRelic(FRelic _Relic)
 	{
 		UE_LOG(LogTemp, Warning, TEXT("유물획득실패"));
 	}
+
+	if (URelicSubsystem* RelicSubsystem = GetGameInstance() ? GetGameInstance()->GetSubsystem<URelicSubsystem>() : nullptr)
+	{
+		RelicSubsystem->TriggerRelicEffectsByTiming(_Relic, EEffectApplyTiming::OnAcquire, PartyInfo.Champions);
+	}
 	
 }
 
@@ -78,3 +85,5 @@ void UPartyInstance::LostPotion(FName _PotionName)
 		return Item.PotionID == _PotionName;
 	});
 }
+
+

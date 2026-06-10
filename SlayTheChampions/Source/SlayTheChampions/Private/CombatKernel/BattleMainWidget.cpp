@@ -1,14 +1,100 @@
-#include "CombatKernel/BattleMainWidget.h"
+﻿#include "CombatKernel/BattleMainWidget.h"
 #include "CombatKernel/CombatManager.h"
 #include "CombatKernel/HandWidget.h"
+#include "CombatKernel/EffectManager.h"
+#include "CombatKernel/EffectTooltipWidget.h"
+#include "CombatKernel/EffectDescriptionLibrary.h"
+#include "CombatKernel/MonsterActionWidget.h"
 #include "Unit/Unit.h"
+#include "Unit/StatusEffectComponent.h"
+#include "Unit/Enemy/IntentComponent.h"
+#include "Components/WidgetComponent.h"
 #include "Card/CardUserComponent.h"
 #include "Card/CardSubsystem.h"
 #include "Components/TextBlock.h"
 #include "Components/Button.h"
 #include "Components/Widget.h"
+#include "Blueprint/WidgetLayoutLibrary.h"
 #include "Kismet/GameplayStatics.h"
 #include "Misc/ScopeExit.h"
+#include "TimerManager.h"
+
+// ── 적 의도 → 한글 텍스트 (의도 툴팁 전용. 파일 고유 이름으로 유니티 빌드 충돌 방지) ──
+namespace
+{
+	FText BMW_KoIntentKind(EIntentKind Kind)
+	{
+		switch (Kind)
+		{
+			case EIntentKind::Attack:   return FText::FromString(TEXT("공격"));
+			case EIntentKind::Defend:   return FText::FromString(TEXT("방어"));
+			case EIntentKind::Shield:   return FText::FromString(TEXT("보호막"));
+			case EIntentKind::Buff:     return FText::FromString(TEXT("강화"));
+			case EIntentKind::Debuff:   return FText::FromString(TEXT("디버프"));
+			case EIntentKind::NoAttack: return FText::FromString(TEXT("대기"));
+			case EIntentKind::Question: return FText::FromString(TEXT("？"));
+			default:                    return FText::FromString(TEXT("알 수 없음"));
+		}
+	}
+
+	// 의도 1개 → 툴팁 엔트리들. 주 행동 1줄 + (있으면) 부가 상태효과 1줄로 분해
+	void BMW_AppendIntentEntries(const FIntent& In, TArray<FEffectInfo>& Out)
+	{
+		// ── 주 행동 ──────────────────────────────────────────────────────
+		FEffectInfo Action;
+		Action.DisplayName = BMW_KoIntentKind(In.Kind);
+		switch (In.Kind)
+		{
+			case EIntentKind::Attack:
+			{
+				FString D = FString::Printf(TEXT("데미지 %d"), In.Value);
+				if (In.Hits > 1) D += FString::Printf(TEXT(" x%d회"), In.Hits);
+				Action.Description = FText::FromString(D);
+				break;
+			}
+			case EIntentKind::Defend:
+			case EIntentKind::Shield:
+				Action.Description = FText::FromString(FString::Printf(TEXT("보호막 %d 획득"), In.Value));
+				break;
+			case EIntentKind::NoAttack:
+				Action.Description = FText::FromString(TEXT("이번 턴 행동하지 않음"));
+				break;
+			default:
+				// 강화/디버프 등 — DisplayText 있으면 사용, 없으면 비움(부가 효과 줄로 설명됨)
+				Action.Description = In.DisplayText;
+				break;
+		}
+		Out.Add(Action);
+
+		// ── 부가 상태효과 (별도 줄 + 전체 설명) ──────────────────────────
+		if (In.EffectType != 0)
+		{
+			const EEffectType ET = static_cast<EEffectType>(In.EffectType);
+			FEffectInfo Eff;
+			Eff.DisplayName = FText::FromString(FString::Printf(TEXT("%s %d 부여"),
+				*UEffectDescriptionLibrary::GetEffectName(ET).ToString(), In.EffectValue));
+			Eff.Description = UEffectDescriptionLibrary::GetEffectDescription(ET);
+			Out.Add(Eff);
+		}
+	}
+
+	// 적 액터에 붙은 머리 위 MonsterActionWidget 탐색 (WidgetComponent 경유)
+	UMonsterActionWidget* BMW_FindActionWidget(AActor* Enemy)
+	{
+		if (!Enemy) return nullptr;
+		TArray<UWidgetComponent*> Comps;
+		Enemy->GetComponents<UWidgetComponent>(Comps);
+		for (UWidgetComponent* WC : Comps)
+		{
+			if (WC)
+			{
+				if (UMonsterActionWidget* MAW = Cast<UMonsterActionWidget>(WC->GetWidget()))
+					return MAW;
+			}
+		}
+		return nullptr;
+	}
+}
 
 // 위젯 초기화: CombatManager 탐색 및 바인딩, 플레이어 클릭 이벤트 바인딩, 마우스 활성화
 void UBattleMainWidget::NativeConstruct()
@@ -90,17 +176,6 @@ void UBattleMainWidget::OnPhaseChanged(ETurnPhase NewPhase)
 		SharedCost = MaxCost;
 		UpdateCostDisplay();
 	}
-	else if (NewPhase == ETurnPhase::PlayerExecutionPhase)
-	{
-		UE_LOG(LogTemp, Warning, TEXT("[BattleMainWidget] PlayerExecutionPhase | HandPanel=%s"),
-			HandPanel ? TEXT("valid") : TEXT("NULL"));
-		// 턴 종료 → 손패 숨김 및 플레이어 선택 해제
-		DeselectCurrentPlayer();
-		if (Btn_NextPlayer) Btn_NextPlayer->SetVisibility(ESlateVisibility::Collapsed);
-		if (Btn_Back) Btn_Back->SetVisibility(ESlateVisibility::Collapsed);
-		if (CombatManager) CombatManager->OnCameraReturnToDefault.Broadcast();
-		OnReturnToMainScreen();
-	}
 }
 
 // SpawnedPlayers 각각의 OnUnitClicked에 바인딩
@@ -120,11 +195,15 @@ void UBattleMainWidget::BindPlayerClickEvents()
 void UBattleMainWidget::HandlePlayerClicked(AUnit* Unit)
 {
 	if (!Unit) return;
-	UE_LOG(LogTemp, Warning, TEXT("[BattleMainWidget] Player clicked: %s"), *Unit->GetName());
+	// 사망한 플레이어는 선택/타겟 불가 (SingleAlly 타겟 클릭 경로도 여기서 함께 차단됨)
+	// TODO: 사망 시 OnUnitClicked 바인딩 해제 (HandleDeath 연동)는 별도 작업으로 남김
+	if (!Unit->IsAlive()) return;
+	UE_LOG(LogTemp, Log, TEXT("[BattleMainWidget] Player clicked: %s"), *Unit->GetName());
 
-	// SingleAlly 카드 대기 중: 클릭한 플레이어 유닛을 타겟으로 큐에 등록
+	// SingleAlly 카드 대기 중: 시전자 본인 제외하고 클릭한 플레이어를 타겟으로 등록
 	if (!PendingCardName.IsNone() && PendingCardData.TargetType == ETargetType::SingleAlly)
 	{
+		if (Unit == SelectedUnit) return; // 시전자 본인은 타겟 불가
 		QueueCardAction(PendingCardData, Unit, PendingCardName);
 		return;
 	}
@@ -138,7 +217,7 @@ void UBattleMainWidget::HandlePlayerClicked(AUnit* Unit)
 			MainCanvas->SetVisibility(ESlateVisibility::SelfHitTestInvisible);
 		OnPendingCleared();
 		// 타겟 대기 해제 알림 (카메라 복귀용)
-		if (CombatManager) CombatManager->OnTargetingStateChanged.Broadcast(false);
+		if (CombatManager) CombatManager->OnTargetingStateChanged.Broadcast(false, false);
 	}
 
 	// 이전 선택 유닛의 CardUserComponent 바인딩 해제 후 새 유닛 선택
@@ -158,14 +237,18 @@ void UBattleMainWidget::HandlePlayerClicked(AUnit* Unit)
 
 	OnPlayerSelected(Unit);
 
+	// 선택 플레이어의 버프/디버프 수치 변경 구독 → 카드 데미지/방어 표시 실시간 갱신
+	if (UStatusEffectComponent* SEC = Unit->FindComponentByClass<UStatusEffectComponent>())
+		SEC->OnEffectValueChanged.AddDynamic(this, &UBattleMainWidget::HandleCasterEffectChanged);
+
 	// 새 유닛의 CardUserComponent 바인딩 및 현재 손패 즉시 표시
 	UCardUserComponent* CardComp = Unit->FindComponentByClass<UCardUserComponent>();
 	if (CardComp)
 	{
 		CardComp->OnHandChanged.AddDynamic(this, &UBattleMainWidget::HandleHandChanged);
 		HandleHandChanged(CardComp->GetHand());
-		// 플레이어 선택 시에만 등장 애니메이션 재생 (카드 사용 시 갱신과 분리)
-		if (HandPanel) HandPanel->PlayShowAnimation();
+		if (HandPanel)
+			HandPanel->PlayShowAnimation();
 	}
 	else
 	{
@@ -221,7 +304,26 @@ void UBattleMainWidget::HandleHandChanged(const TArray<FName>& CardNames)
 		for (const FName& Name : CardNames)
 		{
 			const FCardDataRow* Row = CS->GetCard(Name);
-			if (Row) Cards.Add(*Row);
+			if (!Row) continue;
+
+			// 선택 플레이어의 버프/디버프를 반영한 표시값으로 보정 (실제 발동과 동일 계산)
+			FCardDataRow Card = *Row;
+			Card.Damage = UEffectManager::ModifyOutgoingDamage(SelectedUnit, Card.Damage);
+			Card.Block  = UEffectManager::ModifyBlockGain(SelectedUnit, Card.Block);
+
+			// Description 템플릿 치환 — 설명에 {Damage}/{Block}/{Heal}/{Draw}/{Cost} 자리표시자가 있으면
+			// 보정된 값으로 바뀐다. 자리표시자가 없는 설명은 그대로 유지(하위 호환).
+			{
+				FFormatNamedArguments Args;
+				Args.Add(TEXT("Damage"), Card.Damage);
+				Args.Add(TEXT("Block"),  Card.Block);
+				Args.Add(TEXT("Heal"),   Card.HealAmount);
+				Args.Add(TEXT("Draw"),   Card.DrawCount);
+				Args.Add(TEXT("Cost"),   Card.Cost);
+				Card.Description = FText::Format(Card.Description, Args);
+			}
+
+			Cards.Add(Card);
 		}
 	}
 
@@ -241,6 +343,22 @@ void UBattleMainWidget::HandleHandChanged(const TArray<FName>& CardNames)
 	}
 	else
 		OnHandUpdated(Cards);
+}
+
+// 선택 플레이어의 버프/디버프 수치 변경 수신
+// 카드 데미지/방어 표시에 영향을 주는 효과(AttackUp/Weak/DefenseUp/Frail)일 때만 손패 재표시
+void UBattleMainWidget::HandleCasterEffectChanged(EEffectType Type, int32 OldValue, int32 NewValue)
+{
+	if (!SelectedUnit) return;
+
+	if (Type != EEffectType::Buff_AttackUp  &&
+		Type != EEffectType::Debuff_Weak    &&
+		Type != EEffectType::Buff_DefenseUp &&
+		Type != EEffectType::Debuff_Frail)
+		return;
+
+	if (UCardUserComponent* CardComp = SelectedUnit->FindComponentByClass<UCardUserComponent>())
+		HandleHandChanged(CardComp->GetHand());
 }
 
 // HandPanel::OnCardSelected 수신
@@ -276,7 +394,7 @@ void UBattleMainWidget::HandleCardClicked(FName CardName, UCardWidget* ClickedCa
 	// 코스트 부족 시 — SetCardPendingDirect로 걸린 pending 상태 해제 후 무시
 	if (SharedCost < Row->Cost)
 	{
-		UE_LOG(LogTemp, Warning, TEXT("[BattleMainWidget] Not enough cost for %s (need %d, have %d)"),
+		UE_LOG(LogTemp, Log, TEXT("[BattleMainWidget] Not enough cost for %s (need %d, have %d)"),
 			*CardName.ToString(), Row->Cost, SharedCost);
 		if (HandPanel) HandPanel->ClearCardPending();
 		return;
@@ -299,7 +417,11 @@ void UBattleMainWidget::HandleCardClicked(FName CardName, UCardWidget* ClickedCa
 		MainCanvas->SetVisibility(ESlateVisibility::Visible);
 	if (HandPanel) HandPanel->SetTargetingMode(true);
 	OnCardPending(CardName); // UI에는 CardID 전달 (표시용)
-	if (CombatManager) CombatManager->OnTargetingStateChanged.Broadcast(true);
+	// SingleAlly: 아군 타겟팅 카메라 / SingleEnemy: 적 타겟팅 카메라
+	if (CombatManager)
+	{
+		CombatManager->OnTargetingStateChanged.Broadcast(true, Row->TargetType == ETargetType::SingleAlly);
+	}
 	UE_LOG(LogTemp, Log, TEXT("[BattleMainWidget] Card pending: %s (RowName: %s) — waiting for target"),
 		*CardName.ToString(), *RowName.ToString());
 }
@@ -308,10 +430,13 @@ void UBattleMainWidget::HandleCardClicked(FName CardName, UCardWidget* ClickedCa
 // 클릭 수신 여부를 항상 로그로 출력, PendingCard가 있으면 타겟으로 큐에 등록
 void UBattleMainWidget::HandleEnemyClicked(AUnit* Enemy)
 {
-	if (!Enemy) return;
+	if (!Enemy || !Enemy->IsAlive()) return;
+
+	// 적이 아닌 유닛(아군 등)은 무시 — SingleEnemy 카드가 아군을 타겟해 데미지를 주는 버그 방지
+	if (CombatManager && !CombatManager->GetSpawnedEnemies().Contains(Enemy)) return;
 
 	// 적 클릭 수신 확인 로그 (PendingCard 여부와 무관하게 항상 출력)
-	UE_LOG(LogTemp, Warning, TEXT("[BattleMainWidget] Enemy clicked: %s | PendingCard: %s"),
+	UE_LOG(LogTemp, Log, TEXT("[BattleMainWidget] Enemy clicked: %s | PendingCard: %s"),
 		*Enemy->GetName(),
 		PendingCardName.IsNone() ? TEXT("none") : *PendingCardName.ToString());
 
@@ -332,11 +457,63 @@ void UBattleMainWidget::BindEnemyClickEvents()
 		if (Unit)
 		{
 			Unit->OnUnitClicked.AddDynamic(this, &UBattleMainWidget::HandleEnemyClicked);
+			Unit->OnUnitHovered.AddDynamic(this, &UBattleMainWidget::HandleEnemyHovered);
 			BoundCount++;
 		}
 	}
 
-	UE_LOG(LogTemp, Warning, TEXT("[BattleMainWidget] Enemy click events bound: %d enemies"), BoundCount);
+	UE_LOG(LogTemp, Log, TEXT("[BattleMainWidget] Enemy click events bound: %d enemies"), BoundCount);
+}
+
+// 적 호버 시작/종료 — 시작 시 지연 타이머, 종료 시 취소 + 숨김
+void UBattleMainWidget::HandleEnemyHovered(AUnit* Enemy, bool bHovered)
+{
+	UWorld* World = GetWorld();
+	if (!World) return;
+
+	if (bHovered)
+	{
+		IntentHoverEnemy = Enemy;
+		World->GetTimerManager().SetTimer(IntentTimerHandle, this, &UBattleMainWidget::ShowIntentTooltip, IntentHoverDelay, false);
+	}
+	else if (Enemy == IntentHoverEnemy)
+	{
+		World->GetTimerManager().ClearTimer(IntentTimerHandle);
+		if (IntentTooltipInstance) IntentTooltipInstance->HideTooltip();
+		IntentHoverEnemy = nullptr;
+	}
+}
+
+// 타이머 만료 — 호버 중인 적의 의도를 읽어 툴팁에 표시 (적의 "행동"만)
+void UBattleMainWidget::ShowIntentTooltip()
+{
+	if (!IntentHoverEnemy) return;
+
+	// 다중 행동 소스: 머리 위 위젯이 보관한 의도 배열 우선, 없으면 IntentComponent.Current 1개
+	TArray<FIntent> Intents;
+	if (UMonsterActionWidget* MAW = BMW_FindActionWidget(IntentHoverEnemy))
+		Intents = MAW->DisplayedIntents;
+	if (Intents.Num() == 0)
+	{
+		if (UIntentComponent* IC = IntentHoverEnemy->FindComponentByClass<UIntentComponent>())
+			Intents.Add(IC->Current);
+	}
+
+	// 각 행동을 주 행동 + 부가 효과 줄로 분해해 누적
+	TArray<FEffectInfo> Entries;
+	for (const FIntent& In : Intents)
+		BMW_AppendIntentEntries(In, Entries);
+
+	if (Entries.Num() == 0) return;
+
+	// IntentTooltipClass로 지연 생성해 커서 근처에 표시
+	if (!IntentTooltipClass) return;
+	if (!IntentTooltipInstance)
+		IntentTooltipInstance = CreateWidget<UEffectTooltipWidget>(GetOwningPlayer(), IntentTooltipClass);
+	if (!IntentTooltipInstance) return;
+
+	const FVector2D MousePos = UWidgetLayoutLibrary::GetMousePositionOnViewport(GetWorld());
+	IntentTooltipInstance->ShowAt(Entries, MousePos);
 }
 
 // 카드+타겟이 확정됐을 때 호출
@@ -358,14 +535,20 @@ void UBattleMainWidget::QueueCardAction(const FCardDataRow& CardData, AUnit* Tar
 	// Hand에서 카드 제거 + OnHandChanged 브로드캐스트 → 손패 UI 즉시 갱신
 	if (CardComp->RemoveFromHand(RemoveKey))
 	{
-		UE_LOG(LogTemp, Warning, TEXT("[BattleMainWidget] Card removed from hand: %s | Hand count: %d"),
+		UE_LOG(LogTemp, Log, TEXT("[BattleMainWidget] Card removed from hand: %s | Hand count: %d"),
 			*RemoveKey.ToString(), CardComp->GetHandCount());
 
 		SharedCost -= CardData.Cost;
 		UpdateCostDisplay();
 
-		// 카드 효과 즉시 실행
+		// 히스토리 먼저 기록 — ExecuteCard의 OnActionExecuted 브로드캐스트 전에 ActionQueue에 있어야 함
+		CombatManager->QueuePlayerAction(CardData, CasterIndex, CardRowName, TargetOverride);
+
+		// 카드 효과 즉시 실행 (끝에서 OnActionExecuted 브로드캐스트 → 라이브 콤보 위젯 갱신)
 		CombatManager->ExecuteCard(CardData, CasterIndex, TargetOverride);
+
+		// 카드 효과 적용 후 콤보 판정 (효과 이후 발동되도록 — 큐 등록은 QueuePlayerAction에서 이미 됨)
+		CombatManager->EvaluatePlayedCardCombos(CasterIndex);
 
 		// DrawCount가 있으면 즉시 드로우 (드로우 카드 효과)
 		if (CardData.DrawCount > 0)
@@ -378,10 +561,7 @@ void UBattleMainWidget::QueueCardAction(const FCardDataRow& CardData, AUnit* Tar
 		if (HandPanel)
 			HandPanel->UpdateDeckCounts(CardComp->GetDrawPileCount(), CardComp->GetDiscardPileCount());
 
-		// 이번 턴 사용 기록 저장 (순서 추적용)
-		CombatManager->QueuePlayerAction(CardData, CasterIndex, CardRowName, TargetOverride);
-
-		UE_LOG(LogTemp, Warning, TEXT("[BattleMainWidget] Card executed: %s | Cost left: %d"),
+		UE_LOG(LogTemp, Log, TEXT("[BattleMainWidget] Card executed: %s | Cost left: %d"),
 			*CardData.CardID.ToString(), SharedCost);
 	}
 
@@ -390,11 +570,12 @@ void UBattleMainWidget::QueueCardAction(const FCardDataRow& CardData, AUnit* Tar
 	CancelPendingCard();
 }
 
-// Btn_EndTurn 클릭 → PlayerExecutionPhase 진입 후 큐 실행
+// Btn_EndTurn 클릭 → 손패 정리·선택 해제·카메라 복귀 후 EndPlayerActionPhase 호출
 // 대기 중인 카드가 있으면 먼저 취소하여 다음 턴에 OnPendingCleared가 오발되는 것을 방지
 void UBattleMainWidget::HandleEndTurnClicked()
 {
-	UE_LOG(LogTemp, Warning, TEXT("[BattleMainWidget] HandleEndTurnClicked called"));
+	UE_LOG(LogTemp, Log, TEXT("[BattleMainWidget] HandleEndTurnClicked called"));
+	OnPlayerTurnEnd();
 	CancelPendingCard();
 
 	// 턴 종료 시 모든 플레이어의 손패를 버림 파일로 이동
@@ -408,6 +589,9 @@ void UBattleMainWidget::HandleEndTurnClicked()
 		}
 	}
 
+	// 플레이어 선택 해제 (OnHandChanged 바인딩 해제 + SelectedUnit 초기화)
+	DeselectCurrentPlayer();
+
 	// 버튼 즉시 숨김
 	if (Btn_NextPlayer) Btn_NextPlayer->SetVisibility(ESlateVisibility::Collapsed);
 	if (Btn_Back) Btn_Back->SetVisibility(ESlateVisibility::Collapsed);
@@ -417,6 +601,13 @@ void UBattleMainWidget::HandleEndTurnClicked()
 		HandPanel->PlayHideAnimation();
 	else
 		OnHideHand();
+
+	// 카메라 Default 위치 복귀 + 메인 화면 복귀 알림
+	// EndPlayerActionPhase → OnPhaseChanged 와 중복 트리거되지만,
+	// CameraSet 의 멱등 게이트(LastTargetSlot)가 같은 목표로의 재호출을 무시하므로 dip 없음
+	if (CombatManager)
+		CombatManager->OnCameraReturnToDefault.Broadcast();
+	OnReturnToMainScreen();
 
 	if (CombatManager)
 		CombatManager->EndPlayerActionPhase();
@@ -467,6 +658,45 @@ void UBattleMainWidget::HandleBackClicked()
 	OnReturnToMainScreen();
 }
 
+// 타겟팅 중 커서 아래 유닛을 직접 트레이스해 외곽선 강조
+// (MainCanvas가 Visible이라 유닛의 NotifyActorBeginCursorOver가 안 오므로 위젯이 대신 처리)
+FReply UBattleMainWidget::NativeOnMouseMove(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent)
+{
+	if (!PendingCardName.IsNone() && CombatManager)
+	{
+		AUnit* HitUnit = nullptr;
+		if (APlayerController* PC = GetOwningPlayer())
+		{
+			FHitResult Hit;
+			if (PC->GetHitResultUnderCursor(ECC_Visibility, false, Hit))
+				HitUnit = Cast<AUnit>(Hit.GetActor());
+			if (!HitUnit && PC->GetHitResultUnderCursor(ECC_Pawn, false, Hit))
+				HitUnit = Cast<AUnit>(Hit.GetActor());
+		}
+
+		// 카드 타입에 맞는 진영의 살아있는 유닛만 유효 타겟
+		AUnit* NewHover = nullptr;
+		if (HitUnit && HitUnit->IsAlive())
+		{
+			const bool bIsEnemy  = CombatManager->GetSpawnedEnemies().Contains(HitUnit);
+			const bool bIsPlayer = CombatManager->GetSpawnedPlayers().Contains(HitUnit);
+			if ((PendingCardData.TargetType == ETargetType::SingleEnemy && bIsEnemy) ||
+				(PendingCardData.TargetType == ETargetType::SingleAlly  && bIsPlayer))
+				NewHover = HitUnit;
+		}
+
+		// 강조 대상이 바뀌었을 때만 토글
+		if (NewHover != TargetHoverUnit)
+		{
+			if (TargetHoverUnit) TargetHoverUnit->SetHoverHighlight(false);
+			if (NewHover)        NewHover->SetHoverHighlight(true);
+			TargetHoverUnit = NewHover;
+		}
+	}
+
+	return Super::NativeOnMouseMove(InGeometry, InMouseEvent);
+}
+
 // 타겟 대기 중 빈 영역 또는 유효하지 않은 위치 클릭 시 대기 카드 취소
 // 유닛이 클릭된 경우에는 기존 HandleEnemyClicked / HandlePlayerClicked 흐름에 위임
 FReply UBattleMainWidget::NativeOnMouseButtonDown(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent)
@@ -492,18 +722,23 @@ FReply UBattleMainWidget::NativeOnMouseButtonDown(const FGeometry& InGeometry, c
 		if (!HitUnit)
 			HitUnit = TryFindUnit(ECC_Pawn);
 
-		UE_LOG(LogTemp, Warning, TEXT("[BattleMainWidget] MouseDown | PendingCard: %s | HitUnit: %s | Alive: %s"),
+		UE_LOG(LogTemp, Log, TEXT("[BattleMainWidget] MouseDown | PendingCard: %s | HitUnit: %s | Alive: %s"),
 			*PendingCardName.ToString(),
 			HitUnit ? *HitUnit->GetName() : TEXT("none"),
 			(HitUnit && HitUnit->IsAlive()) ? TEXT("true") : TEXT("false"));
 
 		// FReply::Unhandled() 만으로는 3D 액터의 OnUnitClicked까지 전파되지 않으므로 직접 호출
+		// 진영을 검증해 잘못된 대상(아군에 SingleEnemy, 적에 SingleAlly)으로 등록되는 것을 막는다
 		if (HitUnit && HitUnit->IsAlive())
 		{
-			if (PendingCardData.TargetType == ETargetType::SingleEnemy)
+			const bool bIsEnemy  = CombatManager && CombatManager->GetSpawnedEnemies().Contains(HitUnit);
+			const bool bIsPlayer = CombatManager && CombatManager->GetSpawnedPlayers().Contains(HitUnit);
+
+			if (PendingCardData.TargetType == ETargetType::SingleEnemy && bIsEnemy)
 				HandleEnemyClicked(HitUnit);
-			else if (PendingCardData.TargetType == ETargetType::SingleAlly)
+			else if (PendingCardData.TargetType == ETargetType::SingleAlly && bIsPlayer)
 				HandlePlayerClicked(HitUnit);
+			// 진영이 맞지 않으면 무시하고 대기 유지 (클릭만 소비)
 			return FReply::Handled();
 		}
 	}
@@ -517,12 +752,23 @@ FReply UBattleMainWidget::NativeOnMouseButtonDown(const FGeometry& InGeometry, c
 void UBattleMainWidget::CancelPendingCard()
 {
 	if (PendingCardName.IsNone()) return;
+
+	// 타겟팅 중 강조하던 유닛 외곽선 해제
+	if (TargetHoverUnit)
+	{
+		TargetHoverUnit->SetHoverHighlight(false);
+		TargetHoverUnit = nullptr;
+	}
+
+	// 타입에 따라 올바른 카메라 복귀 델리게이트 브로드캐스트
+	if (CombatManager)
+		CombatManager->OnTargetingStateChanged.Broadcast(false, PendingCardData.TargetType == ETargetType::SingleAlly);
+
 	PendingCardName = NAME_None;
 	if (MainCanvas)
 		MainCanvas->SetVisibility(ESlateVisibility::SelfHitTestInvisible);
 	if (HandPanel) HandPanel->SetTargetingMode(false);
 	OnPendingCleared();
-	if (CombatManager) CombatManager->OnTargetingStateChanged.Broadcast(false);
 }
 
 // SpawnedPlayers에서 현재 선택 다음 인덱스의 살아있는 플레이어로 전환
@@ -562,6 +808,10 @@ void UBattleMainWidget::DeselectCurrentPlayer()
 	UCardUserComponent* CardComp = SelectedUnit->FindComponentByClass<UCardUserComponent>();
 	if (CardComp)
 		CardComp->OnHandChanged.RemoveDynamic(this, &UBattleMainWidget::HandleHandChanged);
+
+	// 버프 수치 변경 구독 해제
+	if (UStatusEffectComponent* SEC = SelectedUnit->FindComponentByClass<UStatusEffectComponent>())
+		SEC->OnEffectValueChanged.RemoveDynamic(this, &UBattleMainWidget::HandleCasterEffectChanged);
 
 	SelectedUnit = nullptr;
 }

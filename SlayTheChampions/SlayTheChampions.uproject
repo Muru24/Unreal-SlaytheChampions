@@ -30,6 +30,14 @@
 				"Win64",
 				"Android"
 			]
+		},
+		{
+			"Name": "NiagaraFluids",
+			"Enabled": true
+		},
+		{
+			"Name": "Text3D",
+			"Enabled": true
 		}
 	]
 }

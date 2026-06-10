@@ -5,6 +5,8 @@
 #include "CoreMinimal.h"
 #include "UObject/NoExportTypes.h"
 #include "GameplayTagContainer.h"
+#include "Unit/CombatTypes.h"
+#include "Card/CardDataTypes.h"
 #include "JobDetail.generated.h"
 
 /**

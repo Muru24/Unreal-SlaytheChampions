@@ -3,9 +3,14 @@
 #include "CoreMinimal.h"
 #include "Subsystems/GameInstanceSubsystem.h"
 #include "Relic/RelicStruct.h"
+#include "Reward/RewardStruct.h"
 #include "RelicSubsystem.generated.h"
 
 class UDataTable;
+class AUnit;
+
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnRelicEffectTriggered, const FRelic&, RelicData, const FSourceEffectData&, EffectData);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_ThreeParams(FOnRelicCardRewardRequested, ERewardTypes, RewardType, FName, RewardID, int32, Amount);
 
 UCLASS()
 class SLAYTHECHAMPIONS_API URelicSubsystem : public UGameInstanceSubsystem
@@ -38,6 +43,12 @@ private:
 
 public:
     virtual void Initialize(FSubsystemCollectionBase& Collection) override;
+
+    UPROPERTY(BlueprintAssignable, Category = "Relic|Effect")
+    FOnRelicEffectTriggered OnRelicEffectTriggered;
+
+    UPROPERTY(BlueprintAssignable, Category = "Relic|Effect")
+    FOnRelicCardRewardRequested OnRelicCardRewardRequested;
 
     UFUNCTION(BlueprintCallable, Category = "Relic|Query")
     bool GetCachedRelicData(FName InRelicID, FRelic& OutRelicData) const;
@@ -72,6 +83,12 @@ public:
     UFUNCTION(BlueprintCallable, Category = "Relic|Query")
     FName GetRandomShopAvailableRelic();
 
+    UFUNCTION(BlueprintCallable, Category = "Relic|Effect")
+    bool TriggerRelicEffectsByTiming(const FRelic& RelicData, EEffectApplyTiming ApplyTiming, const TArray<AUnit*>& Targets);
+
+    UFUNCTION(BlueprintCallable, Category = "Relic|Effect")
+    bool TriggerOwnedRelicEffectsByTiming(EEffectApplyTiming ApplyTiming, const TArray<AUnit*>& Targets);
+
 private:
     void RebuildRelicCache();
 
@@ -81,7 +98,9 @@ private:
 
     static void FillRelicRuntimeData(const FRelicDataRow& RelicRow, TArray<FSourceEffectData>&& Effects, FRelic& OutRelicData);
 
-   
+    bool ApplyRelicEffect(const FRelic& RelicData, const FSourceEffectData& EffectData, const TArray<AUnit*>& Targets);
+
+    TArray<FSourceEffectData> ResolveEffectSelection(const TArray<FSourceEffectData>& Effects) const;
 
 
 };

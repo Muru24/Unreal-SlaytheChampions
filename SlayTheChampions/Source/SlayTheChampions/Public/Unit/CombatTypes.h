@@ -41,7 +41,8 @@ enum class EIntentKind : uint8
     Buff         UMETA(DisplayName = "Buff"),
     Debuff       UMETA(DisplayName = "Debuff"),
     Shield       UMETA(DisplayName = "Shield"),    // 기믹 전용 쉴드 (GimmickComponent 사용)
-    Unknown      UMETA(DisplayName = "Unknown")
+    Unknown      UMETA(DisplayName = "Unknown"),
+    Question     UMETA(DisplayName = "Question")   // 랜덤/미확정 행동 표시용
 };
 
 /**
@@ -129,4 +130,19 @@ struct SLAYTHECHAMPIONS_API FGimmickPhase
     UPROPERTY(EditAnywhere, BlueprintReadOnly) float           TriggerValue = 0.5f; // HP는 0~1 비율, Turn이면 몇 턴
     UPROPERTY(EditAnywhere, BlueprintReadOnly) FText           AnnounceText;
     UPROPERTY(EditAnywhere, BlueprintReadOnly) bool            bOneShot     = true; // true면 한 번만 발동
+};
+
+/**
+ * EElementType
+ *
+ * 마법사가 사용하는 원소 종류
+ * FieldElement에서 현재 필드에 깔린 원소를 추적하는데 사용
+ */
+UENUM(BlueprintType)
+enum class ECardElementType : uint8
+{
+    None    UMETA(DisplayName = "None"),
+    Fire    UMETA(DisplayName = "Fire"),
+    Ice     UMETA(DisplayName = "Ice"),
+    Thunder UMETA(DisplayName = "Thunder")
 };

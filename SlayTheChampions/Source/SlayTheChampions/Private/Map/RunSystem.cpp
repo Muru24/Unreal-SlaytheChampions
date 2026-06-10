@@ -129,7 +129,7 @@ void URunSystem::ReturnToMapAfterAreaClear()
 	{
 		if (ULevelManager* LevelManager = GameInstance->GetSubsystem<ULevelManager>())
 		{
-			LevelManager->GoToLevel(MapLevelName);
+			LevelManager->MoveToConfiguredLevel(MapLevelName);
 		}
 	}
 }

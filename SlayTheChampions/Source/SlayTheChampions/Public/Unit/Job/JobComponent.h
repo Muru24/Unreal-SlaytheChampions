@@ -6,6 +6,7 @@
 #include "Components/ActorComponent.h"
 #include "GameplayTagContainer.h"
 #include "Card/CardDataTypes.h"   // EJobClass
+
 #include "JobComponent.generated.h"
 
 class UJobDetail;

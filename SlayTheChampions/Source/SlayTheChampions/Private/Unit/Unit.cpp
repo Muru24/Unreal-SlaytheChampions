@@ -4,6 +4,7 @@
 #include "Unit/Unit.h"
 #include "Unit/StatComponent.h"
 #include "Components/CapsuleComponent.h"
+#include "Components/MeshComponent.h"
 
 // Sets default values
 AUnit::AUnit()
@@ -27,6 +28,8 @@ void AUnit::BeginPlay()
 {
 	Super::BeginPlay();
 
+	// StatComponent 1회 캐싱 (없는 유닛이면 nullptr 유지)
+	CachedStat = FindComponentByClass<UStatComponent>();
 }
 
 void AUnit::HandleDeath()
@@ -48,7 +51,8 @@ void AUnit::NotifyMove(FVector WorldDestination)
 
 UStatComponent* AUnit::GetStat() const
 {
-	return FindComponentByClass<UStatComponent>();
+	// 캐시 우선, BeginPlay 전이거나 미캐싱이면 Find로 폴백
+	return CachedStat ? CachedStat : FindComponentByClass<UStatComponent>();
 }
 
 bool AUnit::IsAlive() const
@@ -58,7 +62,7 @@ bool AUnit::IsAlive() const
 		return Stat->CurrentHP > 0;
 	}
 
-	// StatComponent가 없으면 살아있다고 간주
+	// StatComponent가 없으면 죽은 것으로 간주 (전투 대상에서 제외)
 	return false;
 }
 
@@ -67,4 +71,35 @@ void AUnit::NotifyActorOnClicked(FKey ButtonPressed)
 {
 	Super::NotifyActorOnClicked(ButtonPressed);
 	OnUnitClicked.Broadcast(this);
+}
+
+// 마우스 커서 진입 — 외곽선 켜기 + 호버 알림
+void AUnit::NotifyActorBeginCursorOver()
+{
+	Super::NotifyActorBeginCursorOver();
+	SetHoverOutline(true);
+	OnUnitHovered.Broadcast(this, true);
+}
+
+// 마우스 커서 이탈 — 외곽선 끄기 + 호버 해제 알림
+void AUnit::NotifyActorEndCursorOver()
+{
+	Super::NotifyActorEndCursorOver();
+	SetHoverOutline(false);
+	OnUnitHovered.Broadcast(this, false);
+}
+
+// 유닛의 모든 MeshComponent(Static/Skeletal/Paper)에 Custom Depth 렌더링 토글
+// 포스트프로세스 외곽선 머티리얼이 Custom Depth Stencil을 읽어 윤곽선을 그린다
+void AUnit::SetHoverOutline(bool bEnabled)
+{
+	TArray<UMeshComponent*> Meshes;
+	GetComponents<UMeshComponent>(Meshes);
+	for (UMeshComponent* Mesh : Meshes)
+	{
+		if (!Mesh) continue;
+		Mesh->SetRenderCustomDepth(bEnabled);
+		if (bEnabled)
+			Mesh->SetCustomDepthStencilValue(HoverStencilValue);
+	}
 }

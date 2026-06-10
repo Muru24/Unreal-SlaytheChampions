@@ -1,6 +1,10 @@
 #include "Relic/RelicSubsystem.h"
 
+#include "CombatKernel/EffectManager.h"
 #include "Engine/DataTable.h"
+#include "Party/PartyInstance.h"
+#include "Unit/StatComponent.h"
+#include "Unit/Unit.h"
 #include "UObject/EnumProperty.h"
 
 void URelicSubsystem::Initialize(FSubsystemCollectionBase& Collection)
@@ -118,6 +122,40 @@ FName URelicSubsystem::GetRandomShopAvailableRelic()
 	return AvailableRelics[Index].RelicID;
 }
 
+bool URelicSubsystem::TriggerRelicEffectsByTiming(const FRelic& RelicData, EEffectApplyTiming ApplyTiming, const TArray<AUnit*>& Targets)
+{
+	bool bAnyApplied = false;
+	const TArray<FSourceEffectData> SelectedEffects = ResolveEffectSelection(RelicData.Effects);
+	for (const FSourceEffectData& EffectData : SelectedEffects)
+	{
+		if (EffectData.ApplyTiming != ApplyTiming)
+		{
+			continue;
+		}
+
+		bAnyApplied |= ApplyRelicEffect(RelicData, EffectData, Targets);
+	}
+
+	return bAnyApplied;
+}
+
+bool URelicSubsystem::TriggerOwnedRelicEffectsByTiming(EEffectApplyTiming ApplyTiming, const TArray<AUnit*>& Targets)
+{
+	const UPartyInstance* PartyInstance = GetGameInstance() ? GetGameInstance()->GetSubsystem<UPartyInstance>() : nullptr;
+	if (!PartyInstance)
+	{
+		return false;
+	}
+
+	bool bAnyApplied = false;
+	for (const FRelic& RelicData : PartyInstance->GetPartyInfo().Relics)
+	{
+		bAnyApplied |= TriggerRelicEffectsByTiming(RelicData, ApplyTiming, Targets);
+	}
+
+	return bAnyApplied;
+}
+
 TArray<FRelic> URelicSubsystem::GetCachedRelicsBySource(ERelicSourceType InSourceType) const
 {
 	switch (InSourceType)
@@ -201,5 +239,104 @@ void URelicSubsystem::AddRelicToSourceCache(const FRelic& InRelicData)
 	default:
 		break;
 	}
+}
+
+bool URelicSubsystem::ApplyRelicEffect(const FRelic& RelicData, const FSourceEffectData& EffectData, const TArray<AUnit*>& Targets)
+{
+	OnRelicEffectTriggered.Broadcast(RelicData, EffectData);
+
+	if (EffectData.EffectType == EEffectType::None || EffectData.Value <= 0)
+	{
+		return false;
+	}
+
+	if (EffectData.EffectType == EEffectType::LegendaryCardReward)
+	{
+		OnRelicCardRewardRequested.Broadcast(ERewardTypes::LegendCard, TEXT("RandomLegendCard"), EffectData.Value);
+		return true;
+	}
+
+	bool bAppliedToUnit = false;
+	for (AUnit* Target : Targets)
+	{
+		if (!IsValid(Target))
+		{
+			continue;
+		}
+
+		if (EffectData.EffectType == EEffectType::MaxHPUp)
+		{
+			if (UStatComponent* Stat = Target->GetStat())
+			{
+				Stat->MaxHP += EffectData.Value;
+				Stat->Heal(EffectData.Value);
+				bAppliedToUnit = true;
+			}
+			continue;
+		}
+
+		if (EffectData.EffectType == EEffectType::Damage)
+		{
+			UEffectManager::ProcessDamage(Target, EffectData.Value, nullptr);
+			bAppliedToUnit = true;
+			continue;
+		}
+
+		if (EffectData.EffectType == EEffectType::Shield)
+		{
+			UEffectManager::ApplyEffect(Target, EffectData.EffectType, EffectData.Value);
+			bAppliedToUnit = true;
+			continue;
+		}
+
+		if (static_cast<uint8>(EffectData.EffectType) >= static_cast<uint8>(EEffectType::Buff_AttackUp) &&
+			static_cast<uint8>(EffectData.EffectType) < static_cast<uint8>(EEffectType::Debuff_Weak))
+		{
+			UEffectManager::ApplyBuff(Target, EffectData.EffectType, EffectData.Value);
+			bAppliedToUnit = true;
+			continue;
+		}
+
+		if (static_cast<uint8>(EffectData.EffectType) >= static_cast<uint8>(EEffectType::Debuff_Weak))
+		{
+			UEffectManager::ApplyDebuff(Target, EffectData.EffectType, EffectData.Value);
+			bAppliedToUnit = true;
+		}
+	}
+
+	// 전투/상점 전용 패시브는 실제 훅이 붙는 쪽에서 OnRelicEffectTriggered를 받아 처리한다.
+	return bAppliedToUnit || Targets.IsEmpty();
+}
+
+TArray<FSourceEffectData> URelicSubsystem::ResolveEffectSelection(const TArray<FSourceEffectData>& Effects) const
+{
+	TArray<FSourceEffectData> ResolvedEffects;
+	TMap<FName, TArray<FSourceEffectData>> RandomGroups;
+
+	for (const FSourceEffectData& EffectData : Effects)
+	{
+		if (!EffectData.SelectionGroup.IsNone() && EffectData.SelectionMode == EEffectSelectionMode::RandomOne)
+		{
+			RandomGroups.FindOrAdd(EffectData.SelectionGroup).Add(EffectData);
+			continue;
+		}
+
+		ResolvedEffects.Add(EffectData);
+	}
+
+	for (const TPair<FName, TArray<FSourceEffectData>>& Pair : RandomGroups)
+	{
+		if (!Pair.Value.IsEmpty())
+		{
+			ResolvedEffects.Add(Pair.Value[FMath::RandRange(0, Pair.Value.Num() - 1)]);
+		}
+	}
+
+	ResolvedEffects.Sort([](const FSourceEffectData& A, const FSourceEffectData& B)
+	{
+		return A.Order < B.Order;
+	});
+
+	return ResolvedEffects;
 }
 
