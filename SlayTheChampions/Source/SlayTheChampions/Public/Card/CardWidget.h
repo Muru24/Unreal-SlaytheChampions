@@ -9,6 +9,7 @@ class UCardStyleDataAsset;
 class UHandWidget;
 class UImage;
 class UTextBlock;
+class URichTextBlock;
 
 /**
  * UCardWidget
@@ -136,8 +137,9 @@ protected:
     UPROPERTY(BlueprintReadOnly, meta = (BindWidget))
     TObjectPtr<UTextBlock> CardNameText;
 
+    // 카드 설명 — RichTextBlock 으로 <debuff>, <buff>, <exhaust> 태그 색상 표시
     UPROPERTY(BlueprintReadOnly, meta = (BindWidget))
-    TObjectPtr<UTextBlock> DescriptionText;
+    TObjectPtr<URichTextBlock> DescriptionText;
 
     UPROPERTY(BlueprintReadOnly, meta = (BindWidget))
     TObjectPtr<UTextBlock> CostText;
