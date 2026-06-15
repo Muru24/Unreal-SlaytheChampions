@@ -2,6 +2,7 @@
 
 #include "CoreMinimal.h"
 #include "Card/CardDataTypes.h"
+#include "Engine/DataTable.h"
 #include "GameFramework/Actor.h"
 #include "CharacterSelectActor.generated.h"
 
@@ -30,6 +31,10 @@ struct FSelectableCharacterInfo
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Character")
 	TObjectPtr<UTexture2D> Portrait = nullptr;
+
+	/* 이 캐릭터의 초기 덱 DataTable (FStarterDeckRow 구조체) */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Character")
+	TObjectPtr<UDataTable> StarterDeckTable = nullptr;
 };
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnCharacterSelected, ACharacterSelectActor*, SelectActor, const FSelectableCharacterInfo&, CharacterInfo);

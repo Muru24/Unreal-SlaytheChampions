@@ -66,6 +66,24 @@ public:
     UFUNCTION(BlueprintCallable, Category = "Card|Query")
     TArray<FName> GetAllCardNames() const;
 
+    // ── 스타터 덱 ────────────────────────────────────────────────────────────
+
+    /**
+     * 직업별 스타터 덱 DataTable 등록.
+     * BP GameInstance Init 또는 CharacterSelect 레벨 BeginPlay에서 직업마다 호출.
+     * Table 행 구조: FStarterDeckRow (CardID = DT_Cards RowName).
+     */
+    UFUNCTION(BlueprintCallable, Category = "Card|StarterDeck")
+    void RegisterStarterDeck(EJobClass JobClass, UDataTable* Table);
+
+    /**
+     * 직업의 스타터 덱 RowName 목록 반환.
+     * RegisterStarterDeck으로 테이블이 등록돼 있으면 그 테이블 기준,
+     * 없으면 DT_Cards 필터 결과(GetCardNamesByClass) 반환.
+     */
+    UFUNCTION(BlueprintCallable, Category = "Card|StarterDeck")
+    TArray<FName> GetStarterDeckNames(EJobClass JobClass) const;
+
     /**
      * CardID 필드값으로 DataTable Row Name을 역조회한다.
      * Row Name == CardID인 경우 동일 값을 반환하므로 오버헤드 없음.
@@ -83,6 +101,10 @@ private:
 
     /** CardID 필드값 → Row Name 역조회 캐시 (LoadCardDataTable 시 구축) */
     TMap<FName, FName> CardIDToRowName;
+
+    /** 직업별 스타터 덱 DataTable (RegisterStarterDeck으로 등록) */
+    UPROPERTY()
+    TMap<EJobClass, TObjectPtr<UDataTable>> StarterDeckTables;
 
     /** Rarity 수치화 헬퍼 (보상 풀 필터링용) */
     static int32 RarityToInt(ECardRarity Rarity);

@@ -6,6 +6,7 @@
 #include "Components/SkeletalMeshComponent.h"
 #include "Party/PartyInstance.h"
 #include "Party/CharacterSelectVisualDataAsset.h"
+#include "Card/CardSubsystem.h"
 
 ACharacterSelectActor::ACharacterSelectActor()
 {
@@ -114,6 +115,18 @@ bool ACharacterSelectActor::SelectCharacter()
 	if (!bAdded)
 	{
 		return false;
+	}
+
+	// 스타터 덱 등록 및 시드 — StarterDeckTable이 지정돼 있으면 CardSubsystem에 등록 후 즉시 PartyInstance에 저장
+	if (UCardSubsystem* CS = GetGameInstance()->GetSubsystem<UCardSubsystem>())
+	{
+		if (CharacterInfo.StarterDeckTable)
+			CS->RegisterStarterDeck(CharacterInfo.JobClass, CharacterInfo.StarterDeckTable);
+
+		// AddPartyMember가 ChampionJobs에 방금 추가했으므로 마지막 인덱스가 이 캐릭터의 PawnIndex
+		const int32 PawnIndex = PartyInstance->GetChampionJobs().Num() - 1;
+		if (PawnIndex >= 0)
+			PartyInstance->SetDeck(PawnIndex, CS->GetStarterDeckNames(CharacterInfo.JobClass));
 	}
 
 	bSelected = true;

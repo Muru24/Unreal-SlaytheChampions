@@ -1,4 +1,5 @@
 #include "Card/CardSubsystem.h"
+#include "Card/StarterDeckRow.h"
 #include "Engine/DataTable.h"
 
 // ── Lifecycle ────────────────────────────────────────────────────────────────
@@ -22,6 +23,7 @@ void UCardSubsystem::Initialize(FSubsystemCollectionBase& Collection)
                 "Call LoadCardDataTable() manually."),
             *CardTablePath.ToString());
     }
+
 }
 
 // ── Public API ───────────────────────────────────────────────────────────────
@@ -130,6 +132,37 @@ TArray<FName> UCardSubsystem::GetAllCardNames() const
 {
     if (!CardDataTable) return {};
     return CardDataTable->GetRowNames();
+}
+
+void UCardSubsystem::RegisterStarterDeck(EJobClass JobClass, UDataTable* Table)
+{
+    if (!Table)
+    {
+        UE_LOG(LogTemp, Warning, TEXT("[CardSubsystem] RegisterStarterDeck: null table for JobClass %d"), (int32)JobClass);
+        return;
+    }
+    StarterDeckTables.Add(JobClass, Table);
+    UE_LOG(LogTemp, Log, TEXT("[CardSubsystem] StarterDeck registered: JobClass=%d Table=%s"), (int32)JobClass, *Table->GetName());
+}
+
+TArray<FName> UCardSubsystem::GetStarterDeckNames(EJobClass JobClass) const
+{
+    if (const TObjectPtr<UDataTable>* TablePtr = StarterDeckTables.Find(JobClass))
+    {
+        UDataTable* Table = *TablePtr;
+        TArray<FName> Result;
+        for (const FName& RowName : Table->GetRowNames())
+        {
+            const FStarterDeckRow* Row = Table->FindRow<FStarterDeckRow>(RowName, TEXT("GetStarterDeckNames"));
+            if (Row && !Row->CardID.IsNone())
+                Result.Add(Row->CardID);
+        }
+        UE_LOG(LogTemp, Log, TEXT("[CardSubsystem] GetStarterDeckNames: JobClass=%d → %d cards from StarterDeck table"), (int32)JobClass, Result.Num());
+        return Result;
+    }
+
+    // 등록된 테이블 없으면 DT_Cards 필터 결과 반환
+    return GetCardNamesByClass(JobClass);
 }
 
 // ── Private Helpers ──────────────────────────────────────────────────────────
