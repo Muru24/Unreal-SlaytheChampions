@@ -3,6 +3,7 @@
 #include "CombatKernel/HandWidget.h"
 #include "Components/Image.h"
 #include "Components/TextBlock.h"
+#include "Components/RichTextBlock.h"
 #include "PaperSprite.h"
 #include "Engine/Texture2D.h"
 
