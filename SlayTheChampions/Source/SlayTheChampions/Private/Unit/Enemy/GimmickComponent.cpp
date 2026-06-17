@@ -1,4 +1,4 @@
-// Fill out your copyright notice in the Description page of Project Settings.
+﻿// Fill out your copyright notice in the Description page of Project Settings.
 
 
 #include "Unit/Enemy/GimmickComponent.h"
@@ -26,13 +26,13 @@ void UGimmickComponent::BeginPlay()
 	// StatComponent.OnHPChanged 자동 바인딩
 	if (UStatComponent* Stat = GetOwner()->FindComponentByClass<UStatComponent>())
 	{
-		Stat->OnHPChanged.AddDynamic(this, &UGimmickComponent::HandleHPChanged);
+		Stat->OnHPChanged.AddUniqueDynamic(this, &UGimmickComponent::HandleHPChanged);
 	}
 
 	// Unit.OnUnitDied 자동 바인딩
 	if (AUnit* Unit = Cast<AUnit>(GetOwner()))
 	{
-		Unit->OnUnitDied.AddDynamic(this, &UGimmickComponent::HandleOwnerDied);
+		Unit->OnUnitDied.AddUniqueDynamic(this, &UGimmickComponent::HandleOwnerDied);
 	}
 
 }
@@ -43,6 +43,8 @@ void UGimmickComponent::OnTurnStart()
 	CheckTriggers();
 	OnGimmickTurnStart();
 }
+
+
 
 void UGimmickComponent::OnTurnEnd()
 {
@@ -101,5 +103,6 @@ void UGimmickComponent::EnterPhase(int32 Index)
 		OnGimmickAnnounce.Broadcast(Data->Phases[Index].AnnounceText);
 	}
 }
+
 
 

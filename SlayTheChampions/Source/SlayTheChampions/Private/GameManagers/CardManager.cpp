@@ -1,22 +1,23 @@
-#include "GameManagers/CardManager.h"
+﻿#include "GameManagers/CardManager.h"
 #include "Card/DeckComponent.h"
 #include "Card/CardSubsystem.h"
 #include "Card/CardSaveGame.h"
+#include "Party/PartyInstance.h"
 
 void UCardManager::Initialize(FSubsystemCollectionBase& Collection)
 {
     Super::Initialize(Collection);
 
-    // 파티 최대 2명 슬롯 예약
+    // ?뚰떚 理쒕? 2紐??щ’ ?덉빟
     PartyDeckComponents.SetNum(2);
 
-    // CardSubsystem 캐시
+    // CardSubsystem 罹먯떆
     CardSubsystem = GetGameInstance()->GetSubsystem<UCardSubsystem>();
 
     UE_LOG(LogTemp, Log, TEXT("[CardManager] Initialized."));
 }
 
-// ── 파티 덱 등록 ─────────────────────────────────────────────────────────────
+// ?? ?뚰떚 ???깅줉 ?????????????????????????????????????????????????????????????
 
 void UCardManager::RegisterDeckComponent(int32 PawnIndex, UDeckComponent* InDeckComp)
 {
@@ -34,11 +35,11 @@ void UCardManager::RegisterDeckComponent(int32 PawnIndex, UDeckComponent* InDeck
         TEXT("[CardManager] Pawn%d DeckComponent registered."), PawnIndex);
 }
 
-// ── 초기화 ───────────────────────────────────────────────────────────────────
+// ?? 珥덇린?????????????????????????????????????????????????????????????????????
 
 void UCardManager::InitializePartyDecks()
 {
-    // 확정된 경로에서 StarterDeck DataTable 로드
+    // ?뺤젙??寃쎈줈?먯꽌 StarterDeck DataTable 濡쒕뱶
     static const FSoftObjectPath WarriorPath(
         TEXT("/Game/01_Card/01_Test_DT/DT_StarterDeck_Warrior.DT_StarterDeck_Warrior"));
     static const FSoftObjectPath MagePath(
@@ -58,7 +59,7 @@ void UCardManager::InitializePartyDecks()
             *MagePath.ToString());
     }
 
-    // SaveGame 있으면 로드, 없으면 StarterDeck 으로 새로 생성
+    // SaveGame ?덉쑝硫?濡쒕뱶, ?놁쑝硫?StarterDeck ?쇰줈 ?덈줈 ?앹꽦
     UCardSaveGame* Save = UCardSaveGame::LoadOrCreate(WarriorTable, MageTable);
     if (!Save)
     {
@@ -69,7 +70,7 @@ void UCardManager::InitializePartyDecks()
     UE_LOG(LogTemp, Log, TEXT("[CardManager] Party decks initialized."));
 }
 
-// ── 저장 ─────────────────────────────────────────────────────────────────────
+// ?? ????????????????????????????????????????????????????????????????????????
 
 void UCardManager::SaveAllDecks()
 {
@@ -85,7 +86,7 @@ void UCardManager::SaveAllDecks()
         UDeckComponent* DC = PartyDeckComponents[i];
         if (!DC) continue;
 
-        // DrawPile + DiscardPile 합산 저장 (Hand는 전투 종료 시 이미 DiscardPile로 이동된 상태)
+        // DrawPile + DiscardPile ?⑹궛 ???(Hand???꾪닾 醫낅즺 ???대? DiscardPile濡??대룞???곹깭)
         TArray<FName> Combined;
         Combined.Append(DC->GetDrawPile());
         Combined.Append(DC->GetDiscardPile());
@@ -102,7 +103,7 @@ void UCardManager::SaveAllDecks()
     UE_LOG(LogTemp, Log, TEXT("[CardManager] SaveAllDecks completed."));
 }
 
-// ── 보상 카드 ─────────────────────────────────────────────────────────────────
+// ?? 蹂댁긽 移대뱶 ?????????????????????????????????????????????????????????????????
 
 void UCardManager::AddRewardCard(int32 PawnIndex, FName CardName)
 {
@@ -121,17 +122,69 @@ void UCardManager::AddRewardCard(int32 PawnIndex, FName CardName)
         return;
     }
 
-    // 메모리(DeckComponent) DiscardPile에 추가 (다음 RecycleDiscardIntoDraw 시 DrawPile로 합류)
+    // 硫붾え由?DeckComponent) DiscardPile??異붽? (?ㅼ쓬 RecycleDiscardIntoDraw ??DrawPile濡??⑸쪟)
     DC->DiscardCard(CardName);
 
-    // SaveGame 에 반영
+    // SaveGame ??諛섏쁺
     UCardSaveGame::AddCard(PawnIndex, CardName);
 
     UE_LOG(LogTemp, Log,
         TEXT("[CardManager] Pawn%d reward card added - %s."), PawnIndex, *CardName.ToString());
 }
 
-// ── 조회 ─────────────────────────────────────────────────────────────────────
+// ?? 議고쉶 ?????????????????????????????????????????????????????????????????????
+
+void UCardManager::AddCardToPartyDeck(int32 PawnIndex, FName CardName)
+{
+    if (!IsValidPawnIndex(PawnIndex) || CardName.IsNone())
+    {
+        UE_LOG(LogTemp, Warning,
+            TEXT("[CardManager] AddCardToPartyDeck: Invalid PawnIndex(%d) or CardName."), PawnIndex);
+        return;
+    }
+
+    if (UDeckComponent* DC = PartyDeckComponents[PawnIndex])
+    {
+        DC->DiscardCard(CardName);
+    }
+
+    UCardSaveGame::AddCard(PawnIndex, CardName);
+
+    UE_LOG(LogTemp, Log,
+        TEXT("[CardManager] Pawn%d card added to party deck - %s."), PawnIndex, *CardName.ToString());
+}
+
+bool UCardManager::TryPurchaseShopCardForParty(FName CardName, int32 Price, int32& OutPawnIndex)
+{
+    OutPawnIndex = INDEX_NONE;
+
+    if (CardName.IsNone() || Price < 0)
+    {
+        return false;
+    }
+
+    const int32 PawnIndex = FindPartyDeckIndexForCard(CardName);
+    if (!IsValidPawnIndex(PawnIndex))
+    {
+        UE_LOG(LogTemp, Warning,
+            TEXT("[CardManager] TryPurchaseShopCardForParty: No matching party deck for %s."), *CardName.ToString());
+        return false;
+    }
+
+    UPartyInstance* PartyInstance = GetGameInstance() ? GetGameInstance()->GetSubsystem<UPartyInstance>() : nullptr;
+    if (!PartyInstance || PartyInstance->GetGold() < Price)
+    {
+        UE_LOG(LogTemp, Warning,
+            TEXT("[CardManager] TryPurchaseShopCardForParty: Not enough gold for %s. Price=%d"),
+            *CardName.ToString(), Price);
+        return false;
+    }
+
+    PartyInstance->UseGold(Price);
+    AddCardToPartyDeck(PawnIndex, CardName);
+    OutPawnIndex = PawnIndex;
+    return true;
+}
 
 UDeckComponent* UCardManager::GetDeckComponent(int32 PawnIndex) const
 {
@@ -145,9 +198,40 @@ const FCardDataRow* UCardManager::GetCardData(FName CardName) const
     return CardSubsystem->GetCard(CardName);
 }
 
-// ── Private ──────────────────────────────────────────────────────────────────
+// ?? Private ??????????????????????????????????????????????????????????????????
 
 bool UCardManager::IsValidPawnIndex(int32 PawnIndex) const
 {
     return PartyDeckComponents.IsValidIndex(PawnIndex);
 }
+
+int32 UCardManager::FindPartyDeckIndexForCard(FName CardName) const
+{
+    const FCardDataRow* CardData = GetCardData(CardName);
+    if (!CardData)
+    {
+        return INDEX_NONE;
+    }
+
+    UCardSaveGame* Save = UCardSaveGame::LoadSave();
+    if (!Save)
+    {
+        return CardData->RequiredClass == EJobClass::Any && IsValidPawnIndex(0) ? 0 : INDEX_NONE;
+    }
+
+    if (CardData->RequiredClass == EJobClass::Any)
+    {
+        return Save->PartyDecks.IsValidIndex(0) ? 0 : INDEX_NONE;
+    }
+
+    for (int32 Index = 0; Index < Save->PartyDecks.Num(); ++Index)
+    {
+        if (Save->PartyDecks[Index].JobClass == CardData->RequiredClass && IsValidPawnIndex(Index))
+        {
+            return Index;
+        }
+    }
+
+    return INDEX_NONE;
+}
+

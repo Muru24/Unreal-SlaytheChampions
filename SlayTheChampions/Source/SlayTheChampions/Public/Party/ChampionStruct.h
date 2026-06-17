@@ -1,4 +1,4 @@
-// Fill out your copyright notice in the Description page of Project Settings.
+ï»¿// Fill out your copyright notice in the Description page of Project Settings.
 
 #pragma once
 
@@ -9,7 +9,7 @@
 
 class AUnit;
 
-/*Champion Á¤º¸*/
+/*Champion ì •ë³´*/
 USTRUCT(BlueprintType)
 struct FSavePartyInfo
 {
@@ -21,8 +21,10 @@ public:
 
 	UPROPERTY(BlueprintReadOnly, Category = "ChampionInstance", meta = (AllowPrivateAccess = "true"))
 	int32 Gold =0;
-
 	UPROPERTY(BlueprintReadOnly, Category = "ChampionInstance", meta = (AllowPrivateAccess = "true"))
+	TArray<FName> PartyMemberIDs;
+
+	UPROPERTY(Transient, BlueprintReadOnly, Category = "ChampionInstance", meta = (AllowPrivateAccess = "true"))
 	TArray<AUnit*> Champions;
 
 	UPROPERTY(BlueprintReadOnly, Category = "ChampionInstance", meta = (AllowPrivateAccess = "true"))
@@ -43,6 +45,7 @@ public:
 	{
 		MaxGold = 9999;
 		Gold = 0;
+		PartyMemberIDs.Empty();
 		Champions.Empty();
 		Deck.Empty();
 		Relics.Empty();

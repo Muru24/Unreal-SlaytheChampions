@@ -81,3 +81,13 @@ int32 UMapManager::GetMapHeight() const
 {
 	return MapCreator ? MapCreator->GetMapHeight() : 0;
 }
+
+int32 UMapManager::GetCurrentFloorIndex() const
+{
+	return RunSystem ? RunSystem->GetCurrentFloorIndex() : INDEX_NONE;
+}
+
+int32 UMapManager::GetCurrentDisplayFloor() const
+{
+	return RunSystem ? RunSystem->GetCurrentDisplayFloor() : 0;
+}

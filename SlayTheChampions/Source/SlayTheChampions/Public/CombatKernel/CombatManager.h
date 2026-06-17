@@ -4,6 +4,7 @@
 #include "GameFramework/Actor.h"
 #include "Card/CardDataTypes.h"
 #include "Unit/CombatTypes.h"
+#include "Map/MapEnum.h"   // EAreaType (스테이지 인카운터 선택)
 #include "CombatManager.generated.h"
 
 class UStatComponent;
@@ -12,10 +13,15 @@ class UBoxComponent;
 class UArrowComponent;
 class ACameraActor;
 class UBattleMainWidget;
+class UCardComboEvaluator;
+class UDataTable;
+class UWidgetComponent;
+class UEnemyDataTable;
+struct FStageEncounterRow;
 
 /**
  * ETurnPhase
- * 한 턴의 진행 순서. DrawPhase → PlayerActionPhase → PlayerExecutionPhase → EnemyPhase.
+ * 한 턴의 진행 순서. DrawPhase -> PlayerActionPhase -> EnemyPhase.
  * SetPhase()로 전환되며, 각 페이즈 진입 시 CheckCombatEnd()가 먼저 실행된다.
  */
 UENUM(BlueprintType)
@@ -23,7 +29,6 @@ enum class ETurnPhase : uint8
 {
 	DrawPhase             UMETA(DisplayName = "Draw Phase"),
 	PlayerActionPhase     UMETA(DisplayName = "Player Action Phase"),
-	PlayerExecutionPhase  UMETA(DisplayName = "Player Execution Phase"),
 	EnemyPhase            UMETA(DisplayName = "Enemy Phase"),
 };
 
@@ -55,38 +60,28 @@ struct FQueuedAction
 	FName CardRowName;
 };
 
-/**
- * FCombatantInitData
- * InitCombat에서 유닛 스폰 시 주입하는 초기 스탯.
- * 에디터 Details 패널에서 슬롯별로 설정한다.
- */
-USTRUCT(BlueprintType)
-struct FCombatantInitData
-{
-	GENERATED_BODY()
-
-	// 최대 HP
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Combat")
-	int32 MaxHP = 100;
-
-	// 초기 방어도 ([임시] StatComponent에 방어도 추가 후 실제 주입 예정)
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Combat")
-	int32 Defence = 0;
-};
-
 // ── 델리게이트 ─────────────────────────────────────────────────────────
 // 페이즈 전환 시 브로드캐스트 (UI 갱신, 코스트 초기화 등에 바인딩)
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnPhaseChanged,           ETurnPhase, NewPhase);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnPhaseChanged, ETurnPhase, NewPhase);
 // 카드 하나가 실행될 때마다 브로드캐스트 (히스토리 위젯·애니메이션 트리거용)
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnActionExecuted,        FCardDataRow, Card, int32, CasterIndex);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnActionExecuted, FCardDataRow, Card, int32, CasterIndex);
 // EnemyPhase에서 특정 인덱스의 적이 행동을 시작할 때 브로드캐스트
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnEnemyTurnStart,         int32,      EnemyIndex);
-// 플레이어 유닛 선택 시 브로드캐스트 (BattleCameraActor BP — 플레이어 뒤로 카메라 이동)
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnBattlePlayerSelected,   AUnit*,     SelectedPlayer);
-// 카드 타겟 대기 진입(true)/해제(false) 시 브로드캐스트 (BattleCameraActor BP — 적 앞으로 카메라 이동)
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnTargetingStateChanged,  bool,       bIsTargeting);
-// 뒤로가기로 메인 화면 복귀 시 브로드캐스트 (BattleCameraActor BP — Default 위치로 복귀)
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnEnemyTurnStart, int32, EnemyIndex);
+// 플레이어 유닛 선택 시 브로드캐스트 (BattleCameraActor BP)
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnBattlePlayerSelected, AUnit*, SelectedPlayer);
+// 타겟 대기 진입(true)/해제(false) 시 브로드캐스트
+// bIsAlly=false -> CameraSlot_Enemy, bIsAlly=true -> CameraSlot_AllPlayers
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnTargetingStateChanged, bool, bIsTargeting, bool, bIsAlly);
+// 뒤로가기로 메인 화면 복귀 시 브로드캐스트 (BattleCameraActor BP)
 DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnCameraReturnToDefault);
+// 몬스터 페이즈 시작 시 브로드캐스트 (방어도 사라지기 전 — 연출 트리거용)
+DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnEnemyPhaseStarted);
+// 몬스터 1명 행동 완료 후 브로드캐스트 (다음 행동 전 — 연출 트리거용)
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnEnemyActionFinished, int32, EnemyIndex);
+// 카드 히스토리 콤보 발동 시 브로드캐스트 (UI 배너·VFX·사운드 트리거용)
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnComboTriggered, FName, ComboID, int32, CasterIndex);
+// 전투 종료 시 브로드캐스트 (bWon: 승리 여부) — MainLevel/RunSystem이 레벨 숨김·복귀에 사용
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnCombatEnded, bool, bWon);
 
 /**
  * ACombatManager
@@ -102,14 +97,24 @@ class SLAYTHECHAMPIONS_API ACombatManager : public AActor
 public:
 	ACombatManager();
 
-	// ── 스폰 클래스 ───────────────────────────────────────────────
-	// 스폰할 플레이어 유닛 Blueprint 클래스
-	UPROPERTY(EditAnywhere, Category = "Combat|Setup")
-	TSubclassOf<AUnit> PlayerClass;
+	// ── 유닛 슬롯 (SetPlayerActor/SetEnemyActor로 설정하거나 에디터에서 직접 지정) ──
+	UPROPERTY(EditInstanceOnly, BlueprintReadOnly, Category = "Combat|Setup")
+	AUnit* PlayerActor_0;
 
-	// 스폰할 적 유닛 Blueprint 클래스
-	UPROPERTY(EditAnywhere, Category = "Combat|Setup")
-	TSubclassOf<AUnit> EnemyClass;
+	UPROPERTY(EditInstanceOnly, BlueprintReadOnly, Category = "Combat|Setup")
+	AUnit* PlayerActor_1;
+
+	UPROPERTY(EditInstanceOnly, BlueprintReadOnly, Category = "Combat|Setup")
+	AUnit* PlayerActor_2;
+
+	UPROPERTY(EditInstanceOnly, BlueprintReadOnly, Category = "Combat|Setup")
+	AUnit* EnemyActor_0;
+
+	UPROPERTY(EditInstanceOnly, BlueprintReadOnly, Category = "Combat|Setup")
+	AUnit* EnemyActor_1;
+
+	UPROPERTY(EditInstanceOnly, BlueprintReadOnly, Category = "Combat|Setup")
+	AUnit* EnemyActor_2;
 
 	// 전투 화면 메인 위젯 Blueprint 클래스 (InitCombat에서 자동 생성·AddToViewport)
 	UPROPERTY(EditAnywhere, Category = "Combat|Setup")
@@ -119,31 +124,58 @@ public:
 	UPROPERTY(EditAnywhere, Category = "Combat|Setup")
 	TSubclassOf<ACameraActor> BattleCameraClass;
 
-	// ── 스폰 수 ──────────────────────────────────────────────────
-	// 스폰할 플레이어 수 (1~2)
-	UPROPERTY(EditAnywhere, Category = "Combat|Setup", meta = (ClampMin = "1", ClampMax = "2"))
+	// 적 도감(EnemyID별 풀스펙을 담은 데이터 에셋) — 등장 적 선택은 StageEncounterTable/EncounterEnemyIDs가 결정.
+	// 뽑힌 EnemyID로 여기서 정의를 찾아 EnemyActorClass를 스폰 후 데이터를 주입한다.
+	UPROPERTY(EditInstanceOnly, BlueprintReadOnly, Category = "Combat|Setup")
+	UEnemyDataTable* EnemyTable = nullptr;
+
+	// 스테이지 테이블 없이 빠르게 테스트할 때 쓰는 인라인 EnemyID 목록 (최대 3)
+	// StageEncounterTable이 지정돼 행이 뽑히면 무시됨
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Combat|Setup")
+	TArray<FName> EncounterEnemyIDs;
+
+	// 스테이지 인카운터 테이블 (행: FStageEncounterRow) — 방 타입/층에 맞는 인카운터를 가중치 랜덤 선택.
+	// 레벨별로 지정하거나 SetStageEncounterTable로 런타임 주입. 지정 시 EncounterEnemyIDs(인라인)보다 우선.
+	UPROPERTY(EditAnywhere, Category = "Combat|Setup")
+	UDataTable* StageEncounterTable = nullptr;
+
+	// 이 전투의 방 타입 — StageEncounterTable 행 필터에 사용 (레벨별 설정 또는 런타임 주입)
+	UPROPERTY(EditAnywhere, Category = "Combat|Setup")
+	EAreaType CombatAreaType = EAreaType::Normal;
+
+	// 이 전투의 층 — StageEncounterTable의 Min/MaxFloor 필터 (레벨별 설정 또는 런타임 주입)
+	UPROPERTY(EditAnywhere, Category = "Combat|Setup")
+	int32 CombatFloor = 0;
+
+	// 런타임에 스테이지 테이블 주입 (RunSystem/레벨이 BeginCombat 전에 호출 가능)
+	UFUNCTION(BlueprintCallable, Category = "Combat|Setup")
+	void SetStageEncounterTable(UDataTable* InTable) { StageEncounterTable = InTable; }
+
+	// 런타임에 방 타입/층 주입
+	UFUNCTION(BlueprintCallable, Category = "Combat|Setup")
+	void SetCombatArea(EAreaType InAreaType, int32 InFloor) { CombatAreaType = InAreaType; CombatFloor = InFloor; }
+
+	// EnemyTable 경로로 스폰할 제네릭 적 액터 클래스 (EnemyInitializerComponent를 가진 BP_Enemy)
+	UPROPERTY(EditAnywhere, Category = "Combat|Setup")
+	TSubclassOf<AUnit> EnemyActorClass;
+
+	// PartyInstance.ChampionJobs 경로로 스폰할 단일 플레이어 액터 클래스 (BP_Player)
+	// 스폰 후 직업(JobComponent·CardUserComponent의 JobClass)만 챔피언별로 주입
+	UPROPERTY(EditAnywhere, Category = "Combat|Setup")
+	TSubclassOf<AUnit> PlayerActorClass;
+
+	// true면 BeginPlay에서 자동으로 BeginCombat 호출 (직접 플레이/테스트 레벨용).
+	// 스트리밍으로 프리로드되는 전투 레벨은 false로 두고, LevelManager가 활성화(OnLevelShown) 시 BeginCombat 호출.
+	UPROPERTY(EditAnywhere, Category = "Combat|Setup")
+	bool bAutoBeginCombat = true;
+
+	// ── 스폰 수 (런타임 출력) ─────────────────────────────────────
+	// InitCombat에서 실제 스폰된 유닛 수로 갱신됨 — 에디터 입력값이 아니라 결과값(읽기 전용)
+	UPROPERTY(VisibleInstanceOnly, BlueprintReadOnly, Category = "Combat|Setup")
 	int32 PlayerCount = 1;
 
-	// 스폰할 적 수 (1~3)
-	UPROPERTY(EditAnywhere, Category = "Combat|Setup", meta = (ClampMin = "1", ClampMax = "3"))
+	UPROPERTY(VisibleInstanceOnly, BlueprintReadOnly, Category = "Combat|Setup")
 	int32 EnemyCount = 1;
-
-	// ── 플레이어 슬롯 데이터 ──────────────────────────────────────
-	UPROPERTY(EditAnywhere, Category = "Combat|PlayerData")
-	FCombatantInitData PlayerData_0;
-
-	UPROPERTY(EditAnywhere, Category = "Combat|PlayerData")
-	FCombatantInitData PlayerData_1;
-
-	// ── 적 슬롯 데이터 ────────────────────────────────────────────
-	UPROPERTY(EditAnywhere, Category = "Combat|EnemyData")
-	FCombatantInitData EnemyData_0;
-
-	UPROPERTY(EditAnywhere, Category = "Combat|EnemyData")
-	FCombatantInitData EnemyData_1;
-
-	UPROPERTY(EditAnywhere, Category = "Combat|EnemyData")
-	FCombatantInitData EnemyData_2;
 
 	// ── 스폰 위치 박스 ────────────────────────────────────────────
 	// 에디터에서 직접 이동하여 스폰 위치를 조정하는 BoxComponent 슬롯들
@@ -152,6 +184,9 @@ public:
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Combat|Slots")
 	UBoxComponent* PlayerBox_1;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Combat|Slots")
+	UBoxComponent* PlayerBox_2;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Combat|Slots")
 	UBoxComponent* EnemyBox_0;
@@ -176,9 +211,17 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Combat|CameraSlots")
 	UArrowComponent* CameraSlot_Player_1;
 
-	// Enemy: 타겟 지정 시 이동할 위치 (빨간색)
+	// Player_2: 2번 플레이어 선택 시 이동할 위치 (초록색)
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Combat|CameraSlots")
+	UArrowComponent* CameraSlot_Player_2;
+
+	// Enemy: 적 타겟 지정 시 이동할 위치 (빨간색)
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Combat|CameraSlots")
 	UArrowComponent* CameraSlot_Enemy;
+
+	// AllPlayers: 아군 타겟 지정 시 이동할 위치 (보라색)
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Combat|CameraSlots")
+	UArrowComponent* CameraSlot_AllPlayers;
 
 	// ── 딜레이 설정 ──────────────────────────────────────────────
 	// 적 한 명 행동 후 다음 적까지 대기 시간 (초)
@@ -216,7 +259,8 @@ public:
 	UPROPERTY(BlueprintAssignable, Category = "Camera")
 	FOnBattlePlayerSelected OnBattlePlayerSelected;
 
-	// 카드 타겟 대기 진입/해제 시 (BattleCameraActor BP에서 바인딩)
+	// 타겟 대기 진입/해제 시 (BattleCameraActor BP에서 바인딩)
+	// bIsAlly=false -> CameraSlot_Enemy, bIsAlly=true -> CameraSlot_AllPlayers
 	UPROPERTY(BlueprintAssignable, Category = "Camera")
 	FOnTargetingStateChanged OnTargetingStateChanged;
 
@@ -224,8 +268,42 @@ public:
 	UPROPERTY(BlueprintAssignable, Category = "Camera")
 	FOnCameraReturnToDefault OnCameraReturnToDefault;
 
-	// ── 전투 초기화 ───────────────────────────────────────────────
-	// 유닛을 스폰하고 1턴을 시작. BeginPlay에서 자동 호출
+	// 몬스터 페이즈 시작 시 — 방어도 리셋 전 (연출·UI 트리거용)
+	UPROPERTY(BlueprintAssignable, Category = "Turn")
+	FOnEnemyPhaseStarted OnEnemyPhaseStarted;
+
+	// 몬스터 1명 행동 완료 후 — 다음 행동 전 (연출·UI 트리거용)
+	UPROPERTY(BlueprintAssignable, Category = "Turn")
+	FOnEnemyActionFinished OnEnemyActionFinished;
+
+	// 카드 히스토리 콤보 발동 시 (UI 배너·VFX 트리거용)
+	UPROPERTY(BlueprintAssignable, Category = "Combo")
+	FOnComboTriggered OnComboTriggered;
+
+	// 전투 종료 시 (bWon) — MainLevel/RunSystem이 구독해 레벨 숨김·복귀 처리
+	UPROPERTY(BlueprintAssignable, Category = "Turn")
+	FOnCombatEnded OnCombatEnded;
+
+	// ── 유닛 슬롯 설정 함수 ──────────────────────────────────────
+	// 테스트용: 수동으로 슬롯 지정 시 PartyInstance/EnemyTable 자동 로드를 무시
+	UFUNCTION(BlueprintCallable, Category = "Combat|Setup")
+	void SetPlayerActor(int32 Index, AUnit* Actor);
+
+	UFUNCTION(BlueprintCallable, Category = "Combat|Setup")
+	void SetEnemyActor(int32 Index, AUnit* Actor);
+
+	// ── 전투 생명주기 ─────────────────────────────────────────────
+	// 레벨 활성화 시 호출 — 상태 리셋 후 전투 초기화(스폰·위젯·턴 시작).
+	// LevelManager가 OnLevelShown에서, 또는 bAutoBeginCombat=true면 BeginPlay에서 호출.
+	UFUNCTION(BlueprintCallable, Category = "Combat")
+	void BeginCombat();
+
+	// 전투 종료 — BattleMainWidget 제거 + 이 매니저가 스폰한 유닛 정리 + OnCombatEnded 브로드캐스트.
+	// CheckCombatEnd가 전멸을 감지하면 자동 호출. 외부에서 강제 종료에도 사용 가능.
+	UFUNCTION(BlueprintCallable, Category = "Combat")
+	void EndCombat(bool bWon);
+
+	// 내부 전투 초기화 (BeginCombat이 리셋 후 호출). 직접 호출 비권장.
 	UFUNCTION(BlueprintCallable, Category = "Combat")
 	void InitCombat();
 
@@ -236,7 +314,7 @@ public:
 	void ExecuteCard(const FCardDataRow& Card, int32 CasterIndex, AUnit* TargetOverride = nullptr);
 
 	// ── 턴 함수 ───────────────────────────────────────────────────
-	// DrawPhase 시작: Shield 리셋 → 버프/디버프 tick → PlayerActionPhase
+	// DrawPhase 시작: Shield 리셋 -> 버프/디버프 tick -> PlayerActionPhase
 	UFUNCTION(BlueprintCallable, Category = "Turn")
 	void StartTurn();
 
@@ -245,15 +323,19 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "Turn")
 	void QueuePlayerAction(const FCardDataRow& Card, int32 CasterIndex, FName CardRowName = NAME_None, AUnit* TargetOverride = nullptr);
 
-	// PlayerActionPhase 종료 → EnemyPhase로 직접 전환 (카드 효과는 이미 즉시 실행됨)
+	// 카드 효과(ExecuteCard) 적용 후 콤보 조건 평가 — QueueCardAction이 ExecuteCard 다음에 호출
+	void EvaluatePlayedCardCombos(int32 CasterIndex);
+
+	// PlayerActionPhase 종료 -> EnemyPhase로 직접 전환 (카드 효과는 이미 즉시 실행됨)
 	UFUNCTION(BlueprintCallable, Category = "Turn")
 	void EndPlayerActionPhase();
 
 	// 이번 턴 사용한 카드 기록 반환 (사용 순서대로)
+	// 카드 사용 히스토리 반환 (최대 10개, 턴 초기화 없음)
 	UFUNCTION(BlueprintPure, Category = "Turn")
 	const TArray<FQueuedAction>& GetActionHistory() const { return ActionQueue; }
 
-	// 적 행동 완료 후 호출 → 다음 적으로 인덱스 전진
+	// 적 행동 완료 후 호출 -> 다음 적으로 인덱스 전진
 	UFUNCTION(BlueprintCallable, Category = "Turn")
 	void OnEnemyActionComplete();
 
@@ -285,6 +367,9 @@ public:
 protected:
 	virtual void BeginPlay() override;
 
+	// 매 프레임 적 행동 위젯(머리 위 WidgetComponent)을 카메라를 향해 회전(빌보드)
+	virtual void Tick(float DeltaSeconds) override;
+
 private:
 	// 스폰된 플레이어 유닛 목록
 	UPROPERTY()
@@ -294,12 +379,35 @@ private:
 	UPROPERTY()
 	TArray<AUnit*> SpawnedEnemies;
 
-	// 플레이어가 이번 턴에 사용한 카드 실행 대기열
+	// 카드 사용 히스토리 (최대 10개, 전투 중 초기화 없음)
 	UPROPERTY()
 	TArray<FQueuedAction> ActionQueue;
 
+	// 카드 히스토리 콤보 룰 DataTable (DT_CardCombos) — 에디터에서 인스턴스에 지정
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Combat|Combo", meta = (AllowPrivateAccess = "true"))
+	UDataTable* ComboTable = nullptr;
+
+	// 콤보 평가기 — BeginPlay에서 생성, QueuePlayerAction마다 평가
+	UPROPERTY()
+	UCardComboEvaluator* ComboEvaluator = nullptr;
+
 	// EnemyPhase에서 현재 행동 중인 적 인덱스
 	int32 CurrentEnemyIndex = 0;
+
+	// SetPlayerActor/SetEnemyActor 호출 시 true — PartyInstance·EnemyTable 자동 로드를 무시
+	bool bPlayerManualSet = false;
+	bool bEnemyManualSet = false;
+
+	// InitCombat 재진입 차단 — 스폰된 적(BP_Enemy)의 BeginPlay가 InitCombat을 재호출해
+	// 무한 재귀로 적을 계속 스폰하는 문제를 막는다 (가드는 스폰 전에 세움)
+	bool bCombatInitialized = false;
+
+	// 전투 종료 1회 가드 — CheckCombatEnd가 여러 번 불려도 EndCombat은 한 번만, 종료 후 턴 진행 차단
+	bool bCombatEnded = false;
+
+	// 이 CombatManager가 스폰한 유닛 (EndCombat에서 Destroy) — 레벨에 직접 배치한 유닛은 포함하지 않음
+	UPROPERTY()
+	TArray<AUnit*> ManagerSpawnedUnits;
 
 	// 적 행동 딜레이 타이머
 	FTimerHandle EnemyTimerHandle;
@@ -312,12 +420,18 @@ private:
 	UPROPERTY()
 	ACameraActor* BattleCamera = nullptr;
 
-	// 페이즈를 전환하고 CheckCombatEnd → OnPhaseChanged 브로드캐스트
+	// 카메라를 향해 빌보드할 적 행동 위젯 컴포넌트 캐시 (InitCombat에서 수집, Tick에서 회전)
+	UPROPERTY()
+	TArray<UWidgetComponent*> EnemyActionWidgetComps;
+
+	// 페이즈를 전환하고 CheckCombatEnd -> OnPhaseChanged 브로드캐스트
 	void SetPhase(ETurnPhase NewPhase);
-	// 전투 종료 조건(전멸) 확인 후 로그 출력 (TODO: 화면 전환 연결)
+	// 전투 종료 조건(전멸) 확인 — 전멸 감지 시 EndCombat 호출
 	void CheckCombatEnd();
-	// 지정 유닛의 Shield를 리셋하고 상태효과 tick. 플레이어·적을 분리 호출한다
-	void ApplyTurnStartEffects(const TArray<AUnit*>& Units);
+	// 지정 유닛의 Shield만 0으로 리셋
+	void ApplyShieldReset(const TArray<AUnit*>& Units);
+	// Shield 제외 버프/디버프 tick (Regen 회복, Burn 데미지, 시간제 스택 감소)
+	void TickBuffsAndDebuffs(const TArray<AUnit*>& Units);
 	// EnemyPhase를 시작하고 첫 번째 살아있는 적부터 행동을 진행
 	void StartEnemyPhase();
 	// 죽은 적을 건너뛰며 CurrentEnemyIndex 적이 행동하도록 처리
@@ -325,11 +439,14 @@ private:
 
 	// DrawPhase에 살아있는 모든 적의 NPCBrainComponent::PlanNextAction을 호출
 	void PlanAllEnemyActions();
-	// 적 한 명의 FEnemyAction을 실행 (Attack → ProcessDamage, Defend → Shield 부여)
+	// 적 한 명의 FEnemyAction을 실행 (Attack -> ProcessDamage, Defend -> Shield 부여)
 	void ExecuteEnemyAction(AUnit* Caster, const FEnemyAction& Action);
 
 	// 스폰 위치 BoxComponent를 생성하고 루트에 부착하는 헬퍼
 	UBoxComponent* SetupBox(const FName& BoxName, const FVector& RelativeLocation, const FColor& Color);
-	// 지정 클래스의 유닛을 Box 위치에 스폰하고 초기 스탯·위젯 연결
-	AUnit* SpawnCombatant(TSubclassOf<AUnit> ActorClass, UBoxComponent* Box, const FCombatantInitData& Data);
+
+	// StageEncounterTable에서 CombatAreaType/CombatFloor에 맞는 행을 가중치 랜덤으로 선택 (없으면 nullptr)
+	// 반환된 행의 EnemyIDs로 적을 스폰한다.
+	// TODO: Boss 타입은 런 시작 시 1개 확정 옵션을 추후 추가 (지금은 보스도 랜덤)
+	const FStageEncounterRow* PickEncounterFromTable() const;
 };

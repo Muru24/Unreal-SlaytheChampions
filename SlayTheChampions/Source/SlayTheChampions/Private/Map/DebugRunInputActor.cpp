@@ -14,20 +14,19 @@ void ADebugRunInputActor::BeginPlay()
 {
 	Super::BeginPlay();
 
-	//?붾쾭洹몄슜
+	// 디버그 입력을 받기 위해 플레이어 입력을 연결한다.
 	if (APlayerController* PlayerController = GetWorld()->GetFirstPlayerController())
 	{
 		EnableInput(PlayerController);
 		if (InputComponent)
 		{
-			InputComponent->BindKey(EKeys::Three, IE_Pressed, this, &ADebugRunInputActor::DebugReturnToMap);
+			InputComponent->BindKey(EKeys::Three, IE_Pressed, this, &ADebugRunInputActor::DebugClearCurrentStage);
 		}
 	}
 }
 
-void ADebugRunInputActor::DebugReturnToMap()
+void ADebugRunInputActor::DebugClearCurrentStage()
 {
-	//?붾쾭洹몄슜
 	if (!GetWorld())
 	{
 		return;
@@ -41,7 +40,6 @@ void ADebugRunInputActor::DebugReturnToMap()
 
 	if (UGameInstance* GameInstance = GetGameInstance())
 	{
-		//?붾쾭洹몄슜
 		if (URunSystem* RunSystem = GameInstance->GetSubsystem<URunSystem>())
 		{
 			RunSystem->AreaCleared();

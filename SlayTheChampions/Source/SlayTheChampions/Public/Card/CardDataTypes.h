@@ -2,7 +2,7 @@
 
 #include "CoreMinimal.h"
 #include "Engine/DataTable.h"
-#include "PaperSprite.h"
+#include "Engine/Texture2D.h"
 #include "CombatKernel/EffectTypes.h"
 #include "CardDataTypes.generated.h"
 
@@ -103,12 +103,12 @@ struct FCardDataRow : public FTableRowBase
     FText Description;
 
     /**
-     * 카드 메인 이미지 (PaperSprite).
-     * 카드 1장마다 다른 스프라이트 참조.
-     * DT_Cards 에서 pixelCardAssest_Sprite_XX 형식.
+     * 카드 메인 이미지 (Texture2D).
+     * 카드 1장마다 다른 텍스처 참조.
+     * DT_Cards 에서 Content/01_Card/CardMainImage/ 경로 지정.
      */
     UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Card|Identity")
-    TSoftObjectPtr<UPaperSprite> MainImage;
+    TSoftObjectPtr<UTexture2D> MainImage;
 
     // 희귀도 및 분류 ──────────────────────────────────────────────────────────────
 

@@ -5,8 +5,24 @@
 #include "GameManagers/LevelManager.h"
 #include "Map/Area.h"
 #include "Map/MapManager.h"
+#include "Map/MapEnum.h"
 #include "Reward/RewardSystem.h"
 #include "Save/STCGameInstance.h"
+
+namespace
+{
+FString AreaTypeToString(EAreaType AreaType)
+{
+	const UEnum* AreaTypeEnum = StaticEnum<EAreaType>();
+	return AreaTypeEnum ? AreaTypeEnum->GetNameStringByValue(static_cast<int64>(AreaType)) : TEXT("Unknown");
+}
+
+FString VisitStateToString(EAreaVisitState VisitState)
+{
+	const UEnum* VisitStateEnum = StaticEnum<EAreaVisitState>();
+	return VisitStateEnum ? VisitStateEnum->GetNameStringByValue(static_cast<int64>(VisitState)) : TEXT("Unknown");
+}
+}
 
 void URunSystem::Initialize(FSubsystemCollectionBase& Collection)
 {
@@ -62,9 +78,23 @@ void URunSystem::StartRunWithMap()
 
 void URunSystem::RefreshRunState()
 {
+	if (!MapManager)
+	{
+		MapManager = GetGameInstance() ? GetGameInstance()->GetSubsystem<UMapManager>() : nullptr;
+	}
+
+	UE_LOG(LogTemp, Warning, TEXT("[RunSystem] RefreshRunState Begin. HasMapManager=%s bHasCurrentRoom=%s SavedCurrent=(Floor=%d Room=%d) CurrentArea=%s"),
+		MapManager ? TEXT("true") : TEXT("false"),
+		MapInfo.bHasCurrentRoom ? TEXT("true") : TEXT("false"),
+		MapInfo.CurrentFloorIndex,
+		MapInfo.CurrentRoomIndex,
+		CurrentArea ? TEXT("Valid") : TEXT("None"));
+
 	if (!CurrentArea && MapManager && MapInfo.bHasCurrentRoom)
 	{
 		CurrentArea = MapManager->GetAreaAt(MapInfo.CurrentFloorIndex, MapInfo.CurrentRoomIndex);
+		UE_LOG(LogTemp, Warning, TEXT("[RunSystem] RefreshRunState Restore CurrentArea. Result=%s"),
+			CurrentArea ? TEXT("Valid") : TEXT("None"));
 	}
 
 	UpdateEnterableState();
@@ -104,8 +134,20 @@ bool URunSystem::AreaCleared()
 {
 	if (!CurrentArea)
 	{
+		UE_LOG(LogTemp, Warning, TEXT("[RunSystem] AreaCleared failed. CurrentArea is null. SavedCurrent=(Floor=%d Room=%d) bHasCurrentRoom=%s"),
+			MapInfo.CurrentFloorIndex,
+			MapInfo.CurrentRoomIndex,
+			MapInfo.bHasCurrentRoom ? TEXT("true") : TEXT("false"));
 		return false;
 	}
+
+	const FAreaInfo BeforeClearInfo = CurrentArea->GetAreaInfo();
+	UE_LOG(LogTemp, Warning, TEXT("[RunSystem] AreaCleared. Current=(Floor=%d Room=%d Type=%s Visit=%s) NextAreas=%d"),
+		static_cast<int32>(BeforeClearInfo.AreaPos.X),
+		static_cast<int32>(BeforeClearInfo.AreaPos.Y),
+		*AreaTypeToString(BeforeClearInfo.AreaType),
+		*VisitStateToString(BeforeClearInfo.AreaVisit),
+		CurrentArea->GetNextAreas().Num());
 
 	CurrentArea->SetVisitState(EAreaVisitState::Cleared);
 	CurrentArea->SetState(EAreaState::End);
@@ -122,6 +164,12 @@ bool URunSystem::AreaCleared()
 
 void URunSystem::ReturnToMapAfterAreaClear()
 {
+	UE_LOG(LogTemp, Warning, TEXT("[RunSystem] ReturnToMapAfterAreaClear. ReturnLevel=%s Current=(Floor=%d Room=%d) CurrentArea=%s"),
+		*MapLevelName.ToString(),
+		MapInfo.CurrentFloorIndex,
+		MapInfo.CurrentRoomIndex,
+		CurrentArea ? TEXT("Valid") : TEXT("None"));
+
 	MapInfo.CurrentRunState = ERunState::StageSelect;
 	RefreshRunState();
 
@@ -129,13 +177,18 @@ void URunSystem::ReturnToMapAfterAreaClear()
 	{
 		if (ULevelManager* LevelManager = GameInstance->GetSubsystem<ULevelManager>())
 		{
-			LevelManager->GoToLevel(MapLevelName);
+			LevelManager->MoveToConfiguredLevel(MapLevelName);
 		}
 	}
 }
 
 bool URunSystem::EnterRoomByGridIndex(int32 FloorIndex, int32 RoomIndex)
 {
+	if (!MapManager)
+	{
+		MapManager = GetGameInstance() ? GetGameInstance()->GetSubsystem<UMapManager>() : nullptr;
+	}
+
 	if (!MapManager)
 	{
 		return false;
@@ -191,16 +244,25 @@ bool URunSystem::CanEnterRoomByGridIndex(int32 FloorIndex, int32 RoomIndex) cons
 TArray<FAreaInfo> URunSystem::GetEnterableRooms() const
 {
 	TArray<FAreaInfo> EnterableRooms;
-	if (!MapManager)
+	const UMapManager* ActiveMapManager = MapManager;
+	if (!ActiveMapManager)
 	{
+		ActiveMapManager = GetGameInstance() ? GetGameInstance()->GetSubsystem<UMapManager>() : nullptr;
+	}
+
+	if (!ActiveMapManager)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("[RunSystem] GetEnterableRooms failed. MapManager is null."));
 		return EnterableRooms;
 	}
 
-	for (int32 FloorIndex = 0; FloorIndex < MapManager->GetMapHeight(); FloorIndex++)
+	const int32 MapHeight = ActiveMapManager->GetMapHeight();
+	const int32 MapWidth = ActiveMapManager->GetMapWidth();
+	for (int32 FloorIndex = 0; FloorIndex < ActiveMapManager->GetMapHeight(); FloorIndex++)
 	{
-		for (int32 RoomIndex = 0; RoomIndex < MapManager->GetMapWidth(); RoomIndex++)
+		for (int32 RoomIndex = 0; RoomIndex < ActiveMapManager->GetMapWidth(); RoomIndex++)
 		{
-			UArea* Area = MapManager->GetAreaAt(FloorIndex, RoomIndex);
+			UArea* Area = ActiveMapManager->GetAreaAt(FloorIndex, RoomIndex);
 			if (Area && Area->GetAreaInfo().bCanEnter)
 			{
 				EnterableRooms.Add(Area->GetAreaInfo());
@@ -208,15 +270,30 @@ TArray<FAreaInfo> URunSystem::GetEnterableRooms() const
 		}
 	}
 
+	UE_LOG(LogTemp, Warning, TEXT("[RunSystem] GetEnterableRooms Result=%d MapSize=(%d x %d) bHasCurrentRoom=%s Current=(Floor=%d Room=%d) CurrentArea=%s"),
+		EnterableRooms.Num(),
+		MapWidth,
+		MapHeight,
+		MapInfo.bHasCurrentRoom ? TEXT("true") : TEXT("false"),
+		MapInfo.CurrentFloorIndex,
+		MapInfo.CurrentRoomIndex,
+		CurrentArea ? TEXT("Valid") : TEXT("None"));
+
 	return EnterableRooms;
 }
 
 FSaveMapInfo URunSystem::GetMapInfo() const
 {
 	FSaveMapInfo SaveMapInfo = MapInfo;
-	if (MapManager && MapManager->HasMapData())
+	const UMapManager* ActiveMapManager = MapManager;
+	if (!ActiveMapManager)
 	{
-		MapManager->WriteMapInfo(SaveMapInfo);
+		ActiveMapManager = GetGameInstance() ? GetGameInstance()->GetSubsystem<UMapManager>() : nullptr;
+	}
+
+	if (ActiveMapManager && ActiveMapManager->HasMapData())
+	{
+		ActiveMapManager->WriteMapInfo(SaveMapInfo);
 	}
 	return SaveMapInfo;
 }
@@ -236,6 +313,11 @@ void URunSystem::SetMapInfo(FSaveMapInfo _info)
 	MapInfo = _info;
 	CurrentArea = nullptr;
 
+	if (!MapManager)
+	{
+		MapManager = GetGameInstance() ? GetGameInstance()->GetSubsystem<UMapManager>() : nullptr;
+	}
+
 	if (MapManager && MapInfo.bHasCurrentRoom)
 	{
 		CurrentArea = MapManager->GetAreaAt(MapInfo.CurrentFloorIndex, MapInfo.CurrentRoomIndex);
@@ -253,9 +335,51 @@ void URunSystem::UpdateEnterableState()
 {
 	if (!MapManager)
 	{
+		MapManager = GetGameInstance() ? GetGameInstance()->GetSubsystem<UMapManager>() : nullptr;
+	}
+
+	if (!MapManager)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("[RunSystem] UpdateEnterableState failed. MapManager is null."));
 		return;
 	}
 
+	UE_LOG(LogTemp, Warning, TEXT("[RunSystem] UpdateEnterableState Begin. MapSize=(%d x %d) bHasCurrentRoom=%s Current=(Floor=%d Room=%d) CurrentArea=%s"),
+		MapManager->GetMapWidth(),
+		MapManager->GetMapHeight(),
+		MapInfo.bHasCurrentRoom ? TEXT("true") : TEXT("false"),
+		MapInfo.CurrentFloorIndex,
+		MapInfo.CurrentRoomIndex,
+		CurrentArea ? TEXT("Valid") : TEXT("None"));
+
+	if (CurrentArea)
+	{
+		const FAreaInfo& CurrentInfo = CurrentArea->GetAreaInfo();
+		UE_LOG(LogTemp, Warning, TEXT("[RunSystem] CurrentArea Info. Pos=(%d,%d) Type=%s Visit=%s NextAreas=%d"),
+			static_cast<int32>(CurrentInfo.AreaPos.X),
+			static_cast<int32>(CurrentInfo.AreaPos.Y),
+			*AreaTypeToString(CurrentInfo.AreaType),
+			*VisitStateToString(CurrentInfo.AreaVisit),
+			CurrentArea->GetNextAreas().Num());
+
+		for (UArea* NextArea : CurrentArea->GetNextAreas())
+		{
+			if (!NextArea)
+			{
+				UE_LOG(LogTemp, Warning, TEXT("[RunSystem] CurrentArea NextArea=None"));
+				continue;
+			}
+
+			const FAreaInfo& NextInfo = NextArea->GetAreaInfo();
+			UE_LOG(LogTemp, Warning, TEXT("[RunSystem] CurrentArea NextArea Pos=(%d,%d) Type=%s Visit=%s"),
+				static_cast<int32>(NextInfo.AreaPos.X),
+				static_cast<int32>(NextInfo.AreaPos.Y),
+				*AreaTypeToString(NextInfo.AreaType),
+				*VisitStateToString(NextInfo.AreaVisit));
+		}
+	}
+
+	int32 EnterableCount = 0;
 	for (int32 FloorIndex = 0; FloorIndex < MapManager->GetMapHeight(); FloorIndex++)
 	{
 		for (int32 RoomIndex = 0; RoomIndex < MapManager->GetMapWidth(); RoomIndex++)
@@ -268,6 +392,17 @@ void URunSystem::UpdateEnterableState()
 
 			Area->SetCanEnter(CanEnterRoom(Area));
 			Area->SetCurrentArea(Area == CurrentArea);
+
+			if (Area->GetAreaInfo().bCanEnter)
+			{
+				EnterableCount++;
+				const FAreaInfo& EnterableInfo = Area->GetAreaInfo();
+				UE_LOG(LogTemp, Warning, TEXT("[RunSystem] EnterableRoom Pos=(%d,%d) Type=%s Visit=%s"),
+					static_cast<int32>(EnterableInfo.AreaPos.X),
+					static_cast<int32>(EnterableInfo.AreaPos.Y),
+					*AreaTypeToString(EnterableInfo.AreaType),
+					*VisitStateToString(EnterableInfo.AreaVisit));
+			}
 		}
 	}
 
@@ -285,6 +420,12 @@ void URunSystem::UpdateEnterableState()
 	}
 
 	MapManager->RefreshDebugMapState();
+
+	UE_LOG(LogTemp, Warning, TEXT("[RunSystem] UpdateEnterableState End. EnterableCount=%d Current=(Floor=%d Room=%d) CurrentArea=%s"),
+		EnterableCount,
+		MapInfo.CurrentFloorIndex,
+		MapInfo.CurrentRoomIndex,
+		CurrentArea ? TEXT("Valid") : TEXT("None"));
 }
 
 void URunSystem::SaveGameData()

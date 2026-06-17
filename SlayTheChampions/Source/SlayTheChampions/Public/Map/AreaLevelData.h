@@ -1,4 +1,4 @@
-#pragma once
+ï»¿#pragma once
 
 #include "CoreMinimal.h"
 #include "Engine/DataAsset.h"
@@ -11,6 +11,9 @@ class SLAYTHECHAMPIONS_API UAreaLevelData : public UDataAsset
 	GENERATED_BODY()
 
 public:
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "AreaLevel")
+	FName InitialStreamedLevelName;
+
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "AreaLevel")
 	FName NormalLevelName;
 
@@ -35,7 +38,9 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "AreaLevel")
 	FName ArtifactEventLevelName;
 
-	/* Area Å¸ÀÔ¿¡ µû¸¥ ·¹º§ ÀÌ¸§ ¹İÈ¯ */
+	/* Area íƒ€ì…ì— ë”°ë¥¸ ë ˆë²¨ ì´ë¦„ ë°˜í™˜ */
 	FName GetLevelName(EAreaType AreaType) const;
 };
+
+
 

@@ -24,7 +24,7 @@ UUserWidget* UHUDManager::ShowMainHUD()
         TargetHUD->AddToViewport();
     }
 
-    TargetHUD->SetVisibility(ESlateVisibility::Visible);
+    TargetHUD->SetVisibility(ESlateVisibility::SelfHitTestInvisible);
     return TargetHUD;
 }
 

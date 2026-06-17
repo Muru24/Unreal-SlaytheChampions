@@ -2,6 +2,7 @@
 
 #include "CoreMinimal.h"
 #include "Blueprint/UserWidget.h"
+#include "Engine/TimerHandle.h"
 #include "Card/CardDataTypes.h"
 #include "Components/CanvasPanel.h"
 #include "CombatKernel/CombatManager.h"
@@ -13,7 +14,7 @@ class UTextBlock;
 class UButton;
 class AUnit;
 class UHandWidget;
-class UActionHistoryWidget;
+class UEffectTooltipWidget;
 
 /**
  * UBattleMainWidget
@@ -76,6 +77,10 @@ public:
 	UFUNCTION(BlueprintImplementableEvent, Category = "Selection")
 	void OnHideHand();
 
+	// 플레이어 턴 종료 버튼 클릭 시 BP 트리거 (연출·사운드용)
+	UFUNCTION(BlueprintImplementableEvent, Category = "Turn")
+	void OnPlayerTurnEnd();
+
 	// 대기 카드 취소 — BP의 오버레이 버튼, 우클릭 등에서 직접 호출 가능
 	UFUNCTION(BlueprintCallable, Category = "Selection")
 	void CancelPendingCard();
@@ -88,14 +93,21 @@ public:
 	UPROPERTY(BlueprintReadWrite, meta = (BindWidgetOptional), Category = "Hand")
 	UHandWidget* HandPanel;
 
-	// 이번 턴 사용 카드 히스토리 패널 (WBP에서 ActionHistoryPanel 이름으로 추가)
-	UPROPERTY(BlueprintReadWrite, meta = (BindWidgetOptional), Category = "History")
-	UActionHistoryWidget* ActionHistoryPanel;
+	// 적 의도 툴팁 클래스 — 지연 생성해 커서를 따라다님
+	UPROPERTY(EditAnywhere, Category = "Tooltip")
+	TSubclassOf<UEffectTooltipWidget> IntentTooltipClass;
+
+	// 적 의도 툴팁이 뜨기까지의 호버 유지 시간 (초)
+	UPROPERTY(EditAnywhere, Category = "Tooltip", meta = (ClampMin = "0"))
+	float IntentHoverDelay = 1.f;
 
 protected:
 	// 유닛 외 영역 클릭 시 대기 카드 취소 처리
 	// MainCanvas가 ESlateVisibility::Visible일 때만 동작
 	virtual FReply NativeOnMouseButtonDown(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent) override;
+
+	// 타겟팅 중 커서 아래 유닛을 직접 트레이스해 외곽선 토글 (MainCanvas가 커서 오버를 막으므로)
+	virtual FReply NativeOnMouseMove(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent) override;
 
 	// 현재 턴 수 표시 텍스트 (BindWidget)
 	UPROPERTY(meta = (BindWidget))
@@ -105,7 +117,7 @@ protected:
 	UPROPERTY(meta = (BindWidgetOptional))
 	UTextBlock* Text_Cost;
 
-	// 턴 종료 버튼 — 클릭 시 PlayerExecutionPhase로 전환
+	// 턴 종료 버튼 — 클릭 시 손패 정리 후 EndPlayerActionPhase 호출
 	UPROPERTY(meta = (BindWidgetOptional))
 	UButton* Btn_EndTurn;
 
@@ -135,6 +147,10 @@ private:
 	UFUNCTION()
 	void HandleHandChanged(const TArray<FName>& CardNames);
 
+	// 선택 플레이어의 버프/디버프 수치 변경 수신 → 데미지/방어 영향 효과면 손패 재표시
+	UFUNCTION()
+	void HandleCasterEffectChanged(EEffectType Type, int32 OldValue, int32 NewValue);
+
 	// HandPanel::OnCardSelected 수신 → 코스트 검증 후 선택 대기 상태로 전환
 	UFUNCTION()
 	void HandleCardClicked(FName CardName, UCardWidget* ClickedCard);
@@ -143,7 +159,15 @@ private:
 	UFUNCTION()
 	void HandleEnemyClicked(AUnit* Enemy);
 
-	// SpawnedEnemies 각각의 OnUnitClicked에 바인딩
+	// 적 유닛 호버 시작/종료 — 시작 시 IntentHoverDelay 타이머, 종료 시 취소 + 숨김
+	UFUNCTION()
+	void HandleEnemyHovered(AUnit* Enemy, bool bHovered);
+
+	// 호버 타이머 만료 → 호버 중인 적의 IntentComponent를 읽어 의도 툴팁 표시
+	UFUNCTION()
+	void ShowIntentTooltip();
+
+	// SpawnedEnemies 각각의 OnUnitClicked / OnUnitHovered에 바인딩
 	void BindEnemyClickEvents();
 
 	// 카드+타겟 확정 후 큐 등록 + Hand 제거 + 코스트 차감을 처리하는 헬퍼
@@ -182,4 +206,19 @@ private:
 
 	// 손패 초과분 정리 중 플래그 — RemoveFromHand의 OnHandChanged 재방송으로 인한 재귀 차단
 	bool bTrimmingHand = false;
+
+	// 타겟팅 중 외곽선 강조 중인 유닛 (커서 이동 시 갱신, 대기 해제 시 초기화)
+	UPROPERTY()
+	AUnit* TargetHoverUnit = nullptr;
+
+	// 현재 의도 툴팁을 위해 호버 중인 적 (타이머 만료 시 이 적의 의도를 표시)
+	UPROPERTY()
+	AUnit* IntentHoverEnemy = nullptr;
+
+	// 폴백(커서 방식)으로 지연 생성한 의도 툴팁 인스턴스
+	UPROPERTY()
+	UEffectTooltipWidget* IntentTooltipInstance = nullptr;
+
+	// 적 의도 호버 지연 타이머
+	FTimerHandle IntentTimerHandle;
 };

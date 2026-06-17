@@ -4,6 +4,7 @@
 #include "Components/Image.h"
 #include "Components/TextBlock.h"
 #include "PaperSprite.h"
+#include "Engine/Texture2D.h"
 
 /**
  * PaperSprite 를 UImage 위젯에 적용하는 내부 헬퍼 함수.
@@ -98,8 +99,12 @@ void UCardWidget::SetCardData(const FCardDataRow& InCardData, UCardStyleDataAsse
     }
 
     // 카드마다 다른 그림 적용 ─────────────────────────────────────────────────
-    // DT_Cards 의 MainImage 에서 해당 카드 스프라이트 동기 로드
-    ApplySpriteToImage(MainImage, InCardData.MainImage.LoadSynchronous());
+    // DT_Cards 의 MainImage(Texture2D) 동기 로드 후 UImage 에 적용
+    if (MainImage)
+    {
+        if (UTexture2D* Tex = InCardData.MainImage.LoadSynchronous())
+            MainImage->SetBrushFromTexture(Tex);
+    }
 
     // 텍스트 적용 ─────────────────────────────────────────────────────────────
     if (CardNameText)

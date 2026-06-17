@@ -51,4 +51,10 @@ public:
 
 	UFUNCTION(BlueprintCallable)
 	URunSystem* GetRunSystem() const { return RunSystem; }
+
+	UFUNCTION(BlueprintPure)
+	int32 GetCurrentFloorIndex() const;
+
+	UFUNCTION(BlueprintPure)
+	int32 GetCurrentDisplayFloor() const;
 };

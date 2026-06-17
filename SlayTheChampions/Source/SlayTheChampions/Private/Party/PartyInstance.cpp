@@ -1,5 +1,8 @@
 ﻿#include "Party/PartyInstance.h"
 
+#include "Relic/RelicSubsystem.h"
+#include "Unit/Unit.h"
+
 void UPartyInstance::Initialize(FSubsystemCollectionBase& Collection)
 {
 	Super::Initialize(Collection);
@@ -13,8 +16,39 @@ void UPartyInstance::Initialize(FSubsystemCollectionBase& Collection)
 void UPartyInstance::InitParty()
 {
 	PartyInfo.InitSavePartyInfo();
-	PartyInfo.Champions.SetNum(2);
 	PartyInfo.Deck.SetNum(2);
+}
+
+void UPartyInstance::SetPartyInfo(FSavePartyInfo _info)
+{
+	PartyInfo = _info;
+	PartyInfo.Champions.Empty();
+}
+
+int32 UPartyInstance::GetPartyMemberCount() const
+{
+	return PartyInfo.Champions.Num() > 0 ? PartyInfo.Champions.Num() : PartyInfo.PartyMemberIDs.Num();
+}
+
+void UPartyInstance::RegisterChampion(AUnit* Unit)
+{
+	const int32 BeforeCount = PartyInfo.Champions.Num();
+
+	if (Unit)
+	{
+		PartyInfo.Champions.AddUnique(Unit);
+		if (!Unit->UnitID.IsNone())
+		{
+			PartyInfo.PartyMemberIDs.AddUnique(Unit->UnitID);
+		}
+	}
+
+	UE_LOG(LogTemp, Warning, TEXT("[PartyInstance] RegisterChampion Unit=%s UnitID=%s Before=%d After=%d SavedIDs=%d"),
+		Unit ? *Unit->GetName() : TEXT("None"),
+		Unit ? *Unit->UnitID.ToString() : TEXT("None"),
+		BeforeCount,
+		PartyInfo.Champions.Num(),
+		PartyInfo.PartyMemberIDs.Num());
 }
 
 
@@ -55,6 +89,11 @@ void UPartyInstance::AddRelic(FRelic _Relic)
 	{
 		UE_LOG(LogTemp, Warning, TEXT("유물획득실패"));
 	}
+
+	if (URelicSubsystem* RelicSubsystem = GetGameInstance() ? GetGameInstance()->GetSubsystem<URelicSubsystem>() : nullptr)
+	{
+		RelicSubsystem->TriggerRelicEffectsByTiming(_Relic, EEffectApplyTiming::OnAcquire, PartyInfo.Champions);
+	}
 	
 }
 
@@ -78,3 +117,5 @@ void UPartyInstance::LostPotion(FName _PotionName)
 		return Item.PotionID == _PotionName;
 	});
 }
+
+

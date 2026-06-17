@@ -96,7 +96,7 @@ void AMapAreaActor::MoveToTargetLevel()
 		{
 			if (!TargetLevelName.IsNone())
 			{
-				LevelManager->GoToLevel(TargetLevelName);
+				LevelManager->MoveToConfiguredLevel(TargetLevelName);
 			}
 		}
 	}

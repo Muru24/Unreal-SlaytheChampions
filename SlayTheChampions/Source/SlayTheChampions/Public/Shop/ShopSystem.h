@@ -8,6 +8,7 @@
 
 class USceneComponent;
 class UItemVisualDataAsset;
+class ACardShopFrameActor;
 
 UENUM(BlueprintType)
 /* 상점 판매 아이템 종류 */
@@ -39,6 +40,9 @@ protected:
 	TSubclassOf<AActor> CardSaleActorClass;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Shop|Class")
+	TSubclassOf<ACardShopFrameActor> CardShopFrameActorClass;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Shop|Class")
 	TSubclassOf<AItemActor> RelicItemActorClass;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Shop|Class")
@@ -65,6 +69,27 @@ protected:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Shop|Card")
 	ECardRarity ShopCardMinRarity = ECardRarity::Normal;
 
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Shop|Card")
+	int32 CardsPerFrame = 3;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Shop|Price")
+	int32 CardMinPrice = 50;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Shop|Price")
+	int32 CardMaxPrice = 120;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Shop|Price")
+	int32 RelicMinPrice = 120;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Shop|Price")
+	int32 RelicMaxPrice = 220;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Shop|Price")
+	int32 PotionMinPrice = 40;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Shop|Price")
+	int32 PotionMaxPrice = 90;
+
 public:
 	UFUNCTION(BlueprintCallable, Category = "Shop|SpawnPoint")
 	void RegisterSpawnPoint(EShopSaleItemType SaleItemType, USceneComponent* SpawnPoint);
@@ -81,6 +106,9 @@ public:
 	UFUNCTION(BlueprintImplementableEvent, Category = "Shop|Card")
 	void OnCardSaleItemSpawned(AActor* SpawnedActor, FName CardID);
 
+	UFUNCTION(BlueprintImplementableEvent, Category = "Shop|Card")
+	void OnCardShopFrameSpawned(ACardShopFrameActor* SpawnedFrame);
+
 	UFUNCTION(BlueprintImplementableEvent, Category = "Shop")
 	void OnShopItemsSpawned();
 
@@ -90,6 +118,8 @@ protected:
 	FName GetRandomShopRelicID() const;
 
 	FName GetRandomShopPotionID() const;
+
+	int32 RollPrice(int32 MinPrice, int32 MaxPrice) const;
 
 	void SpawnCardSaleItem(USceneComponent* SpawnPoint);
 

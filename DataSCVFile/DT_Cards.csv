@@ -1,9 +1,9 @@
 ,CardID,CardName,Description,MainImage,Rarity,CardType,RequiredClass,Cost,Damage,Block,DrawCount,UsingCount,HealAmount,Effects,TargetType,ScoreValue,Notes
-Warrior_Attack,101,타격,적에게 6 피해를 입힙니다.,/Game/Cards/Images/T_Warrior_Attack.T_Warrior_Attack,Normal,Attack,Warrior,1,6,0,0,1,0,(),SingleEnemy,6,기본 공격
-Warrior_Defend,102,수비,방어도 5 을 얻습니다.,/Game/Cards/Images/T_Warrior_Defend.T_Warrior_Defend,Normal,Skill,Warrior,1,0,5,0,1,0,(),Self,6,기본 방어
-Warrior_Draw,103,드로우,카드 1 장을 뽑습니다.,/Game/Cards/Images/T_Warrior_Draw.T_Warrior_Draw,Normal,Skill,Warrior,0,0,0,1,1,0,(),Self,10,카드 뽑기
-Warrior_DoubleAttack,104,이중 타격,적에게 5만큼 2번 입힙니다.,/Game/Cards/Images/T_Warrior_DoubleAttack.T_Warrior_DoubleAttack,Normal,Skill,Warrior,1,5,0,0,2,0,(),SingleEnemy,10,공격
-Mage_Attack,201,타격,적에게 6 피해를 입힌다.,/Game/Cards/Images/T_Mage_Attack.T_Mage_Attack,Normal,Attack,Mage,1,6,0,0,1,0,(),SingleEnemy,6,기본 공격
-Mage_Defend,202,수비,방어도 5를 얻습니다.,/Game/Cards/Images/T_Mage_Defend.T_Mage_Defend,Normal,Skill,Mage,1,0,5,0,1,0,(),Self,6,방어
-Healer_Attack,301,타격,적에게 6 피해를 입힙니다.,/Game/Cards/Images/T_Healer_Attack.T_Healer_Attack,Normal,Attack,Healer,1,6,0,0,1,0,(),SingleEnemy,6,기본 공격
-Healer_Defend,302,수비,아군 1명에게 방어도 6을 부여합니다.,/Game/Cards/Images/T_Healer_Defend.T_Healer_Defend,Normal,Skill,Healer,1,0,5,0,1,0,(),Single_Team,6,단일 방어
+Warrior_Attack,101,타격,적에게 6 피해를 입힙니다.,/Game/01_Card/MainCardImage/Warrior_Attack.Warrior_Attack,Normal,Attack,Warrior,1,6,0,0,1,0,(),SingleEnemy,6,기본 공격
+Warrior_Defend,102,수비,방어도 5 을 얻습니다.,/Game/01_Card/MainCardImage/Warrior_Defence.Warrior_Defence,Normal,Skill,Warrior,1,0,5,0,1,0,(),Self,6,기본 방어
+Warrior_Draw,103,드로우,카드 1 장을 뽑습니다.,,Normal,Skill,Warrior,0,0,0,1,1,0,(),Self,10,카드 뽑기
+Warrior_DoubleAttack,104,이중 타격,적에게 5만큼 2번 입힙니다.,/Game/01_Card/MainCardImage/Warrior_DoubleAttack.Warrior_DoubleAttack,Normal,Skill,Warrior,1,5,0,0,2,0,(),SingleEnemy,10,공격
+Mage_Attack,201,타격,적에게 6 피해를 입힌다.,,Normal,Attack,Mage,1,6,0,0,1,0,(),SingleEnemy,6,기본 공격
+Mage_Defend,202,수비,방어도 5를 얻습니다.,,Normal,Skill,Mage,1,0,5,0,1,0,(),Self,6,방어
+Healer_Attack,301,타격,적에게 6 피해를 입힙니다.,,Normal,Attack,Healer,1,6,0,0,1,0,(),SingleEnemy,6,기본 공격
+Healer_Defend,302,수비,아군 1명에게 방어도 6을 부여합니다.,,Normal,Skill,Healer,1,0,5,0,1,0,(),Single_Team,6,단일 방어

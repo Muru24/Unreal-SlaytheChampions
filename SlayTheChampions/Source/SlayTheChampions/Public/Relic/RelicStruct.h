@@ -4,6 +4,7 @@
 #include "Engine/DataTable.h"
 #include "Card/CardDataTypes.h"
 #include "CombatKernel/EffectTypes.h"
+#include "Effect/EffectStruct.h"
 #include "RelicStruct.generated.h"
 
 UENUM(BlueprintType)

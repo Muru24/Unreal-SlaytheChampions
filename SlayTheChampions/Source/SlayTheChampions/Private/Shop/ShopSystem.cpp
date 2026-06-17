@@ -4,6 +4,7 @@
 #include "Components/SceneComponent.h"
 #include "Potion/PotionSubsystem.h"
 #include "Relic/RelicSubsystem.h"
+#include "Shop/CardShopFrameActor.h"
 
 AShopSystem::AShopSystem()
 {
@@ -136,8 +137,44 @@ FName AShopSystem::GetRandomShopPotionID() const
 	return PotionSubsystem ? PotionSubsystem->GetRandomAnyPotion() : NAME_None;
 }
 
+int32 AShopSystem::RollPrice(int32 MinPrice, int32 MaxPrice) const
+{
+	const int32 SafeMinPrice = FMath::Max(0, MinPrice);
+	const int32 SafeMaxPrice = FMath::Max(SafeMinPrice, MaxPrice);
+	return FMath::RandRange(SafeMinPrice, SafeMaxPrice);
+}
+
 void AShopSystem::SpawnCardSaleItem(USceneComponent* SpawnPoint)
 {
+	if (CardShopFrameActorClass)
+	{
+		ACardShopFrameActor* SpawnedFrame = Cast<ACardShopFrameActor>(SpawnActorAtPoint(CardShopFrameActorClass, SpawnPoint));
+		if (!SpawnedFrame)
+		{
+			return;
+		}
+
+		TArray<FName> CardIDs;
+		TArray<int32> Prices;
+		const int32 SafeCardsPerFrame = FMath::Max(1, CardsPerFrame);
+		for (int32 Index = 0; Index < SafeCardsPerFrame; ++Index)
+		{
+			const FName CardID = GetRandomShopCardID();
+			if (CardID.IsNone())
+			{
+				continue;
+			}
+
+			CardIDs.Add(CardID);
+			Prices.Add(RollPrice(CardMinPrice, CardMaxPrice));
+		}
+
+		SpawnedFrame->InitCards(CardIDs, Prices);
+		SpawnedSaleActors.Add(SpawnedFrame);
+		OnCardShopFrameSpawned(SpawnedFrame);
+		return;
+	}
+
 	const FName CardID = GetRandomShopCardID();
 	if (CardID.IsNone())
 	{
@@ -170,6 +207,7 @@ void AShopSystem::SpawnRelicSaleItem(USceneComponent* SpawnPoint)
 
 	SpawnedActor->SetItemVisualDataAsset(ItemVisualDataAsset);
 	SpawnedActor->InitItem(EItemActorType::Relic, RelicID);
+	SpawnedActor->SetPrice(RollPrice(RelicMinPrice, RelicMaxPrice));
 	SpawnedSaleActors.Add(SpawnedActor);
 }
 
@@ -189,6 +227,7 @@ void AShopSystem::SpawnPotionSaleItem(USceneComponent* SpawnPoint)
 
 	SpawnedActor->SetItemVisualDataAsset(ItemVisualDataAsset);
 	SpawnedActor->InitItem(EItemActorType::Potion, PotionID);
+	SpawnedActor->SetPrice(RollPrice(PotionMinPrice, PotionMaxPrice));
 	SpawnedSaleActors.Add(SpawnedActor);
 }
 

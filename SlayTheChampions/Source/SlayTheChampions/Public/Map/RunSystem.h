@@ -47,7 +47,7 @@ private:
 	URewardSystem* RewardSystem = nullptr;
 
 	UPROPERTY()
-	FName MapLevelName = TEXT("GridMap");
+	FName MapLevelName = TEXT("RunMap");
 
 public:
 	virtual void Initialize(FSubsystemCollectionBase& Collection) override;
@@ -134,6 +134,14 @@ public:
 	/* 현재 Area 정보 반환 */
 	UFUNCTION(BlueprintPure)
 	FAreaInfo GetCurrentRoomInfo() const { return MapInfo.CurrentRoomInfo; }
+
+	/* 현재 층 인덱스 반환. 맵 내부 인덱스라 0층부터 시작한다. */
+	UFUNCTION(BlueprintPure)
+	int32 GetCurrentFloorIndex() const { return MapInfo.CurrentFloorIndex; }
+
+	/* UI 표시용 현재 층 반환. 내부 0층을 1층으로 표시한다. */
+	UFUNCTION(BlueprintPure)
+	int32 GetCurrentDisplayFloor() const { return MapInfo.CurrentFloorIndex == INDEX_NONE ? 0 : MapInfo.CurrentFloorIndex + 1; }
 
 	/* 보상 시스템 반환 */
 	UFUNCTION(BlueprintPure)

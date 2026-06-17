@@ -77,6 +77,12 @@ public:
     UFUNCTION(BlueprintCallable, Category = "Card|Manager")
     void AddRewardCard(int32 PawnIndex, FName CardName);
 
+    UFUNCTION(BlueprintCallable, Category = "Card|Manager")
+    void AddCardToPartyDeck(int32 PawnIndex, FName CardName);
+
+    UFUNCTION(BlueprintCallable, Category = "Card|Shop")
+    bool TryPurchaseShopCardForParty(FName CardName, int32 Price, int32& OutPawnIndex);
+
     // ── 조회 ─────────────────────────────────────────────────────────────────
 
     /**
@@ -105,4 +111,5 @@ private:
 
     // PawnIndex 유효성 검사
     bool IsValidPawnIndex(int32 PawnIndex) const;
+    int32 FindPartyDeckIndexForCard(FName CardName) const;
 };

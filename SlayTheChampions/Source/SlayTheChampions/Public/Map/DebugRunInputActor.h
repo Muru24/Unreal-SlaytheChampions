@@ -16,12 +16,12 @@ protected:
 	virtual void BeginPlay() override;
 
 private:
-	/*?붾쾭洹몄슜*/
+	// 디버그용: 현재 스테이지를 클리어 처리한다.
 	UFUNCTION()
-	void DebugReturnToMap();
+	void DebugClearCurrentStage();
 
 private:
-	/*?붾쾭洹몄슜*/
+	// 맵 화면에서는 디버그 클리어 입력을 무시한다.
 	UPROPERTY(EditAnywhere, Category = "Debug")
-	FName ReturnLevelName = TEXT("GridMap");
+	FName ReturnLevelName = TEXT("RunMap");
 };

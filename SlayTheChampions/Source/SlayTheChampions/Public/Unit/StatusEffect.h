@@ -31,7 +31,7 @@ public:
 	virtual void OnApplied() {}
 	virtual void OnRemoved() {}
 	virtual void OnTurnEnd(); // Duration 감소 처리
-
+	
 	bool IsExpired() const { return Duration == 0 || Stacks <= 0; }
 };
 
